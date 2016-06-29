@@ -7,13 +7,11 @@
 #define ERR_MSG_INVALID_LINE "Invalid configuration line"
 #define ERR_MSG_VALUE_CONSTRAINT "Invalid value - constraint not met"
 #define ERR_MSG_PARAMETER(PARAM_NAME) "Parameter PARAM_NAME is not set"
-enum method
-{
+typedef enum method {
 	RANDOM,
 	MAX_SPREAD,
 	INCREMENTAL
-};
-typedef enum method Method;
+} Method;
 
 struct sp_config_t 
 {
