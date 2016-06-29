@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include "SPLogger.h"
+//#include "SPLogger.h"
 
 /**
  * A data-structure which is used for configuring the system.
@@ -164,6 +164,10 @@ SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config,
  *  - SP_CONFIG_SUCCESS - in case of success
  */
 SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config);
+
+SP_CONFIG_MSG spConfigGetLoggerFilename(char* loggerFilename, const SPConfig config);
+
+int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG* msg);
 
 /**
  * Frees all memory resources associate with config. 
