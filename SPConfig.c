@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
 #include "SPConfig.h"
 #define MAX_LEN 1024
 #define PRINT_ERROR(FILE, LINE, MSG) printf("File: FILE\nLine: LINE\nMessage: MSG\n");
@@ -31,7 +28,7 @@ struct sp_config_t
 	char spLoggerFilename[MAX_LEN];
 };
 
-SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
+SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 {
 	SPConfig config = NULL;
 	FILE* file = NULL;
@@ -400,7 +397,7 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 	return config;
 }
 
-bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG * msg)
+bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL) 
@@ -412,7 +409,7 @@ bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spExtractionMode;
 }
 
-bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG * msg)
+bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -424,7 +421,7 @@ bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spMinimalGUI;
 }
 
-int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG * msg)
+int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -436,7 +433,7 @@ int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spNumOfImages;
 }
 
-int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG * msg)
+int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -448,7 +445,7 @@ int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spNumOfFeatures;
 }
 
-int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG * msg)
+int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -460,7 +457,7 @@ int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spPCADimension;
 }
 
-int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG * msg)
+int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -472,7 +469,7 @@ int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spLoggerLevel;
 }
 
-SP_CONFIG_MSG spConfigGetLoggerFilename(char * loggerFilename, const SPConfig config)
+SP_CONFIG_MSG spConfigGetLoggerFilename(char* loggerFilename, const SPConfig config)
 {
 	if (config == NULL || loggerFilename == NULL)
 		return SP_CONFIG_INVALID_ARGUMENT;
@@ -480,9 +477,9 @@ SP_CONFIG_MSG spConfigGetLoggerFilename(char * loggerFilename, const SPConfig co
 	return SP_CONFIG_SUCCESS;
 }
 
-SP_CONFIG_MSG spConfigGetImagePath(char * imagePath, const SPConfig config, int index)
+SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config, int index)
 {
-	if (config == NULL || imagePath == NULL)
+	if (config == NULL || imagePath == NULL || index < 0)
 		return SP_CONFIG_INVALID_ARGUMENT;
 	if (index >= config->spNumOfImages)
 		return SP_CONFIG_INDEX_OUT_OF_RANGE;
@@ -490,7 +487,17 @@ SP_CONFIG_MSG spConfigGetImagePath(char * imagePath, const SPConfig config, int 
 	return SP_CONFIG_SUCCESS;
 }
 
-SP_CONFIG_MSG spConfigGetPCAPath(char * pcaPath, const SPConfig config)
+SP_CONFIG_MSG spConfigGetFeatsPath(char * featsPath, const SPConfig config, int index)
+{
+	if (config == NULL || featsPath == NULL || index < 0)
+		return SP_CONFIG_INVALID_ARGUMENT;
+	if (index >= config->spNumOfImages)
+		return SP_CONFIG_INDEX_OUT_OF_RANGE;
+	sprintf(featsPath, "%s%s%d.feats", config->spImagesDirectory, config->spImagesPrefix, index);
+	return SP_CONFIG_SUCCESS;
+}
+
+SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config)
 {
 	if (config == NULL || pcaPath == NULL)
 		return SP_CONFIG_INVALID_ARGUMENT;
@@ -500,5 +507,6 @@ SP_CONFIG_MSG spConfigGetPCAPath(char * pcaPath, const SPConfig config)
 
 void spConfigDestroy(SPConfig config)
 {
-	free(config);
+	if (config != NULL)
+		free(config);
 }
