@@ -121,7 +121,7 @@ int main()
 			totalFeaturesAmount += imgFeaturesAmount[i];
 
 			// Save
-			if(!spDatabaseManagerSave(imagePath, i, imgFeaturesAmount[i], featuresByImage[i]))
+			if(!spDatabaseManagerSave(config, i, imgFeaturesAmount[i], featuresByImage[i]))
 			{				
 				LOGGER_PRINT_ERROR("Failed to save features to database");
 				spConfigDestroy(config);
@@ -140,7 +140,7 @@ int main()
 		totalFeaturesAmount = 0;
 		for(i = 0; i < imagesAmount; i++)
 		{
-			featuresByImage[i] = spDatabaseManagerLoad(imagePath, i, imgFeaturesAmount + i);
+			featuresByImage[i] = spDatabaseManagerLoad(config, i, imgFeaturesAmount + i);
 			if(featuresByImage[i] == NULL)
 			{
 				LOGGER_PRINT_ERROR("Failed to load image features from file");

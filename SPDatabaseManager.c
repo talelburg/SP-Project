@@ -1,5 +1,8 @@
 #include "SPDatabaseManager.h"
 
+const int endian_var = 1;
+#define is_bigendian() ( (*(char*)&endian_var) == 0 )
+
 bool spDatabaseManagerSave(SPConfig config, int index, int featuresAmount, SPPoint* features)
 {
 	int i, j, k;
@@ -10,7 +13,7 @@ bool spDatabaseManagerSave(SPConfig config, int index, int featuresAmount, SPPoi
 	double *coordinate = (double*) malloc(sizeof(double));
 	char* charCoordinate; // Used to change a double into chars
 	char* charFeaturesAmount; // Used to change an int into chars
-
+	
 	if(coordinate == NULL)
 	{
 		free(coordinate);
@@ -39,7 +42,12 @@ bool spDatabaseManagerSave(SPConfig config, int index, int featuresAmount, SPPoi
 	
 	charFeaturesAmount = (char*) &featuresAmount;
 	for(k = 0; sizeof(int) / sizeof(char); k++)
-		fputc(charCoordinate[k], file);
+	{
+		if(is_bigendian())
+			fputc(charCoordinate[sizeof(int) / sizeof(char) - k - 1], file);
+		else
+			fputc(charCoordinate[k], file);
+	}
 	for(i = 0; i < featuresAmount; i++)
 	{
 		for(j = 0; j < dim; j++)
@@ -47,7 +55,12 @@ bool spDatabaseManagerSave(SPConfig config, int index, int featuresAmount, SPPoi
 			*coordinate = spPointGetAxisCoor(features[i], j);
 			charCoordinate = (char*) coordinate;
 			for(k = 0; sizeof(double) / sizeof(char); k++)
-				fputc(charCoordinate[k], file);
+			{
+				if(is_bigendian())
+					fputc(charCoordinate[sizeof(double) / sizeof(char) - k - 1], file);
+				else
+					fputc(charCoordinate[k], file);
+			}
 		}
 	}
 
@@ -62,6 +75,7 @@ bool spDatabaseManagerSave(SPConfig config, int index, int featuresAmount, SPPoi
 SPPoint* spDatabaseManagerLoad(SPConfig config, int index, int* featuresAmount)
 {
 	int i, j, k;
+	int ind;
 	char* imagePath;
 	FILE *file;
 	int dim;
@@ -116,8 +130,13 @@ SPPoint* spDatabaseManagerLoad(SPConfig config, int index, int* featuresAmount)
 
 	for(k = 0; k < sizeof(int) / sizeof(char); k++)
 	{
-		charFeaturesAmount[k] = fgetc(file);
-		if(charFeaturesAmount[k] == EOF)
+		if(is_bigendian())
+			ind = sizeof(int) / sizeof(char) - k - 1;
+		else
+			ind = k;
+
+		charFeaturesAmount[ind] = fgetc(file);
+		if(charFeaturesAmount[ind] == EOF)
 		{
 			free(charFeaturesAmount);
 			free(charCoordinate);			
@@ -135,8 +154,13 @@ SPPoint* spDatabaseManagerLoad(SPConfig config, int index, int* featuresAmount)
 		{
 			for(k = 0; k < sizeof(double)/sizeof(char); k++)
 			{
-				charCoordinate[k] = fgetc(file);
-				if(charCoordinate[k] == EOF)
+				if(is_bigendian())
+					ind = sizeof(double)/sizeof(char) - k - 1;
+				else
+					ind = k;
+
+				charCoordinate[ind] = fgetc(file);
+				if(charCoordinate[ind] == EOF)
 				{
 					free(charFeaturesAmount);
 					free(charCoordinate);			
