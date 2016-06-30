@@ -3,6 +3,9 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
 //#include "SPLogger.h"
 
 /**
@@ -119,6 +122,34 @@ int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG* msg);
 int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG* msg);
 
 /**
+* Returns the level of the logger, i.e. the value of spLoggerLevel.
+* 1 indicates error level, 2 indicates warning level, 3 indicates info level,
+* 4 indicates debug level.
+*
+* @param config - the configuration structure
+* @assert msg != NULL
+* @param msg - pointer in which the msg returned by the function is stored
+* @return positive integer in success, negative integer otherwise.
+*
+* - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+* - SP_CONFIG_SUCCESS - in case of success
+*/
+int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/**
+* The function stores in loggerFilename the value of spLoggerFilename.
+* Thus the address given by loggerFilename must contain enough space to
+* store the resulting string.
+*
+* @param loggerFilename - an address to store the result in, it must contain enough space
+* @param config - the configuration structure
+* @return
+*  - SP_CONFIG_INVALID_ARGUMENT - if loggerFilename == NULL or config == NULL
+*  - SP_CONFIG_SUCCESS - in case of success
+*/
+SP_CONFIG_MSG spConfigGetLoggerFilename(char* loggerFilename, const SPConfig config);
+
+/**
  * Given an index 'index' the function stores in imagePath the full path of the
  * ith image.
  *
@@ -147,6 +178,24 @@ SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config,
 		int index);
 
 /**
+* Given an index 'index' the function stores in featsPath the full path of the
+* .feats file corresponding to the given image.
+* Thus the address given by featsPath must contain enough space to
+* store the resulting string.
+*
+* @param featsPath - an address to store the result in, it must contain enough space.
+* @param config - the configuration structure
+* @param index - the index of the image.
+*
+* @return
+* - SP_CONFIG_INVALID_ARGUMENT - if featsPath == NULL or config == NULL
+* - SP_CONFIG_INDEX_OUT_OF_RANGE - if index >= spNumOfImages
+* - SP_CONFIG_SUCCESS - in case of success
+*/
+SP_CONFIG_MSG spConfigGetFeatsPath(char* featsPath, const SPConfig config,
+	int index);
+
+/**
  * The function stores in pcaPath the full path of the pca file.
  * For example given the values of:
  *  spImagesDirectory = "./images/"
@@ -165,9 +214,6 @@ SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config,
  */
 SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config);
 
-SP_CONFIG_MSG spConfigGetLoggerFilename(char* loggerFilename, const SPConfig config);
-
-int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG* msg);
 
 /**
  * Frees all memory resources associate with config. 
