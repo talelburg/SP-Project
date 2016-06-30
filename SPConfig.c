@@ -53,12 +53,12 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 	bool spMinimalGUIInit = false;
 	bool spLoggerLevelInit = false;
 	bool spLoggerFilenameInit = false;
-	assert(msg != NULL);
 	int lineNum; 
 	int i;
 	int varNameStart, varNameLen;
 	int varValueStart, varValueLen;
 	int numberValue;
+	assert(msg != NULL);
 	if (filename = NULL)
 	{
 		*msg = SP_CONFIG_INVALID_ARGUMENT;
@@ -119,6 +119,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 		{
 			printf("Allocation failure");
 			free(config);
+			free(varName);
+			free(varValue);
 			*msg = SP_CONFIG_ALLOC_FAIL;
 			return NULL;
 		}
@@ -142,6 +144,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_STRING;
 				return NULL;
 			}
@@ -156,6 +160,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_INTEGER;
 				return NULL;
 			}
@@ -170,6 +176,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_INTEGER;
 				return NULL;
 			}
@@ -189,6 +197,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_INTEGER;
 				return NULL;
 			}
@@ -211,6 +221,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_STRING;
 				return NULL;
 			}
@@ -223,6 +235,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_INTEGER;
 				return NULL;
 			}
@@ -250,6 +264,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_STRING;
 				return NULL;
 			}
@@ -262,6 +278,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_INTEGER;
 				return NULL;
 			}
@@ -284,6 +302,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_STRING;
 				return NULL;
 			}
@@ -296,6 +316,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
+				free(varName);
+				free(varValue);
 				*msg = SP_CONFIG_INVALID_INTEGER;
 				return NULL;
 			}
@@ -311,6 +333,8 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 		{
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 			free(config);
+			free(varName);
+			free(varValue);
 			*msg = SP_CONFIG_INVALID_STRING;
 			return NULL;
 		}
