@@ -421,6 +421,18 @@ bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG* msg)
 	return config->spMinimalGUI;
 }
 
+Method spConfigGetKDTreeSplitMethod(SPConfig config, SP_CONFIG_MSG* msg)
+{
+	assert(msg != NULL);
+	if (config == NULL)
+	{
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return MAX_SPREAD;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->spKDTreeSplitMethod;
+}
+
 int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
@@ -467,6 +479,30 @@ int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG* msg)
 	}
 	*msg = SP_CONFIG_SUCCESS;
 	return config->spLoggerLevel;
+}
+
+int spConfigGetNumOfSimilarImages(const SPConfig config, SP_CONFIG_MSG * msg)
+{
+	assert(msg != NULL);
+	if (config == NULL)
+	{
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return -1;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->spNumOfSimilarImages;
+}
+
+int spConfigGetKNN(const SPConfig config, SP_CONFIG_MSG * msg)
+{
+	assert(msg != NULL);
+	if (config == NULL)
+	{
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return -1;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->spKNN;
 }
 
 SP_CONFIG_MSG spConfigGetLoggerFilename(char* loggerFilename, const SPConfig config)
