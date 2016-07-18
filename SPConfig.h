@@ -26,6 +26,12 @@ typedef enum sp_config_msg_t {
 	SP_CONFIG_SUCCESS
 } SP_CONFIG_MSG;
 
+typedef enum method {
+	RANDOM,
+	MAX_SPREAD,
+	INCREMENTAL
+} Method;
+
 typedef struct sp_config_t* SPConfig;
 
 /**
