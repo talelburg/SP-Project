@@ -48,14 +48,8 @@ SPKDArray SPKDArrayInit(SPPoint* arr, int size, int dims, SP_KDARRAY_MSG* msg)
 	kdArr->dims = dims;
 	kdArr->size = size;
 	kdArr->points = (SPPoint*)malloc(size * sizeof(SPPoint));
-	if (kdArr->points == NULL)
-	{
-		*msg = SP_KDARRAY_ALLOC_FAIL;
-		free(kdArr);
-		return NULL;
-	}
 	kdArr->pointsByCoors = (int**)malloc(dims * sizeof(int*));
-	if (kdArr->pointsByCoors == NULL)
+	if (kdArr->points == NULL || kdArr->pointsByCoors == NULL)
 	{
 		*msg = SP_KDARRAY_ALLOC_FAIL;
 		free(kdArr->points);
@@ -115,7 +109,7 @@ SPKDArray SPKDArrayInit(SPPoint* arr, int size, int dims, SP_KDARRAY_MSG* msg)
 	return kdArr;
 }
 
-SPKDArray* SPKDARRAYSplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
+SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 {
 	bool* isLeft;
 	SPKDArray* ret;
@@ -135,8 +129,6 @@ SPKDArray* SPKDARRAYSplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 		return NULL;
 	}
 	ret = (SPKDArray*)malloc(2 * sizeof(SPKDArray));
-	ret[0]->pointsByCoors = (int*)malloc(kdArr->dims * sizeof(int*));
-	ret[1]->pointsByCoors = (int*)malloc(kdArr->dims * sizeof(int*));
 	if (ret == NULL)
 	{
 		*msg = SP_KDARRAY_ALLOC_FAIL;
@@ -199,17 +191,8 @@ SPKDArray* SPKDARRAYSplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 	if (isLeft == NULL || leftMap == NULL || rightMap == NULL)
 	{
 		*msg = SP_KDARRAY_ALLOC_FAIL;
-		for (i = 0; i < kdArr->dims; i++)
-		{
-			free(ret[0]->pointsByCoors[i]);
-			free(ret[1]->pointsByCoors[i]);
-		}
-		free(ret[0]->pointsByCoors);
-		free(ret[0]->points);
-		free(ret[0]);
-		free(ret[1]->pointsByCoors);
-		free(ret[1]->points);
-		free(ret[1]);
+		SPKDArrayDestroy(ret[0]);
+		SPKDArrayDestroy(ret[1]);
 		free(ret);
 		free(isLeft);
 		free(leftMap);
