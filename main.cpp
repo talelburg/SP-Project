@@ -10,6 +10,7 @@ extern "C"
 #include "SPQuerySolver.h"
 }
 #include "SPImageProc.h"
+#include <string>
 
 using namespace sp;
 
@@ -24,8 +25,6 @@ using namespace sp;
 #define ASK_FOR_QUERY "Please enter an image path:\n"
 #define MSG_BEST_CANDIDATES "Best candidates for - %s - are:\n"
 #define MSG_EXIT "Exiting..."
-
-#include <string>
 
 int main()
 {
@@ -295,7 +294,7 @@ int main()
 
 	while(1)
 	{
-		similarImages = SPQuerySolverSolve(&kdTreeRoot, queryFeatures, queryFeaturesAmount, knn, numOfSimilarImages);
+		similarImages = SPQuerySolverSolve(kdTreeRoot, queryFeatures, queryFeaturesAmount, knn, numOfSimilarImages);
 
 		if(minimalGui) // minimal gui
 		{
