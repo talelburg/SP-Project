@@ -248,6 +248,47 @@ SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 	return ret;
 }
 
+SPPoint SPKDArrayGetPointByDim(SPKDArray kdArr, int index, int dim, SP_KDARRAY_MSG* msg)
+{
+	assert(msg != NULL);
+	if (kdArr == NULL || dim < -1 || index < 0 || index >= kdArr->size)
+	{
+		*msg = SP_KDARRAY_INVALID_ARGUMENT;
+		return NULL;
+	}
+	if (dim >= kdArr->dims)
+	{
+		*msg = SP_KDARRAY_INDEX_OUT_OF_RANGE;
+		return NULL;
+	}
+	if (dim == -1)
+		return SPPointCopy(kdArr->points[index]);
+	else
+		return SPPointCopy(kdArr->points[kdArr->pointsByCoors[dim][index]]);
+}
+
+int SPKDArrayGetDims(SPKDArray kdArr, SP_KDARRAY_MSG * msg)
+{
+	assert(msg != NULL);
+	if (kdArr == NULL)
+	{
+		*msg = SP_KDARRAY_INVALID_ARGUMENT;
+		return NULL;
+	}
+	return kdArr->dims;
+}
+
+int SPKDArrayGetSize(SPKDArray kdArr, SP_KDARRAY_MSG * msg)
+{
+	assert(msg != NULL);
+	if (kdArr == NULL)
+	{
+		*msg = SP_KDARRAY_INVALID_ARGUMENT;
+		return NULL;
+	}
+	return kdArr->size;
+}
+
 void SPKDArrayDestroy(SPKDArray kdArr)
 {
 	int i;
