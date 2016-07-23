@@ -1,138 +1,263 @@
+#ifndef SPCONFIG_H_
+#define SPCONFIG_H_
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
 #include "SPKDTree.h"
+//#include "SPLogger.h"
 
-struct sp_kd_tree_node_t 
-{
-	int dim;
-	double val;
-	SPKDTreeNode left, right, parent;
-	SPPoint* data;
-};
+/**
+ * A data-structure which is used for configuring the system.
+ */
 
-SPKDTreeNode SPKDTreeInit(SPPoint * arr, int size, int dims, SP_KDTREE_SPLIT_METHOD splitMethod, SP_KDTREE_MSG * msg)
-{
-	SPKDArray kdArr;
-	SP_KDARRAY_MSG* kdArrMsg;
-	SPKDTreeNode ret;
-	assert(msg != NULL);
-	if (arr == NULL || size <= 0 || dims <= 9 || dims >= 29)
-	{
-		*msg = SP_KDTREE_INVALID_ARGUMENT;
-		return NULL;
-	}
-	kdArrMsg = (SP_KDARRAY_MSG*)malloc(sizeof(SP_KDARRAY_MSG));
-	if (kdArrMsg == NULL)
-	{
-		*msg = SP_KDTREE_ALLOC_FAIL;
-		return NULL;
-	}
-	kdArr = SPKDArrayInit(arr, size, dims, kdArrMsg);
-	if (*kdArrMsg == SP_KDARRAY_ALLOC_FAIL)
-	{
-		*msg = SP_KDTREE_ALLOC_FAIL;
-		return NULL;
-	}
-	else if (*kdArrMsg != SP_KDARRAY_SUCCESS)
-	{
-		*msg = SP_KDTREE_UNKNOWN_ERROR;
-		return NULL;
-	}
-	return SPKDTreeInitHelp(kdArr, size, splitMethod, -1, msg);
-}
+typedef enum sp_config_msg_t {
+	SP_CONFIG_MISSING_DIR,
+	SP_CONFIG_MISSING_PREFIX,
+	SP_CONFIG_MISSING_SUFFIX,
+	SP_CONFIG_MISSING_NUM_IMAGES,
+	SP_CONFIG_CANNOT_OPEN_FILE,
+	SP_CONFIG_ALLOC_FAIL,
+	SP_CONFIG_INVALID_INTEGER,
+	SP_CONFIG_INVALID_STRING,
+	SP_CONFIG_INVALID_ARGUMENT,
+	SP_CONFIG_INDEX_OUT_OF_RANGE,
+	SP_CONFIG_SUCCESS
+} SP_CONFIG_MSG;
 
-SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD splitMethod, int lastIndex, SP_KDTREE_MSG * msg)
-{
-	int dim, dims, maxSpread, maxSpreadIndex, spread, i, minVal, maxVal;
-	SP_KDARRAY_MSG* kdArrMsg;
-	SPKDArray* split;
-	SPKDArray kdArr;
-	SPKDTreeNode ret, right, left;
-	assert(msg != NULL);
-	if (kdArr == NULL || size <= 0 || lastIndex < -1)
-	{
-		*msg = SP_KDTREE_INVALID_ARGUMENT;
-		return NULL;
-	}
-	ret = (SPKDTreeNode)malloc(sizeof(*ret));
-	if (ret == NULL)
-	{
-		*msg = SP_KDTREE_ALLOC_FAIL;
-		return NULL;
-	}
-	kdArrMsg = (SP_KDARRAY_MSG*)malloc(sizeof(SP_KDARRAY_MSG));
-	if (kdArrMsg == NULL)
-	{
-		*msg = SP_KDTREE_ALLOC_FAIL;
-		free(ret);
-		return NULL;
-	}
-	if (size == 1)
-	{
-		ret->dim = -1;
-		ret->val = -1.0;
-		ret->left = (ret->right = NULL);
-		ret->data = (SPPoint*)malloc(sizeof(SPPoint));
-		if (ret->data == NULL)
-		{
-			*msg = SP_KDTREE_ALLOC_FAIL;
-			free(ret);
-			return NULL;
-		}
-		*(ret->data) = SPKDArrayGetPointByDim(kdArr, 0, -1, kdArrMsg);
-	}
-	else
-	{
-		dims = SPKDArrayGetDims(kdArr, kdArrMsg);
-		switch (splitMethod)
-		{
-		case SP_KDTREE_MAX_SPREAD:
-			maxSpread = 0;
-			maxSpreadIndex = 0;
-			for (i = 0; i < dims; i++)
-			{
-				minVal = SPPointGetAxisCoor(SPKDArrayGetPointByDim(kdArr, 0, i, kdArrMsg), i);
-				maxVal = SPPointGetAxisCoor(SPKDArrayGetPointByDim(kdArr, size - 1, i, kdArrMsg), i);
-				spread = maxVal - minVal;
-				if (spread > maxSpread)
-				{
-					maxSpread = spread;
-					maxSpreadIndex = i;
-				}
-			}
-			dim = maxSpreadIndex;
-			break;
-		case SP_KDTREE_RANDOM:
-			dim = rand() % dims;
-			break;
-		case SP_KDTREE_INCREMENTAL:
-			dim = (lastIndex + 1) % dims;
-			break;
-		}
-		split = SPKDArraySplit(kdArr, dim, kdArrMsg);
-		ret->dim = dim;
-		ret->val = SPPointGetAxisCoor(SPKDArrayGetPointByDim(split[0], SPKDArrayGetSize(split[0], kdArrMsg), dim, kdArrMsg), dim);
-		ret->left = SPKDTreeInitHelp(split[0], SPKDArrayGetSize(split[0], kdArrMsg), dims, splitMethod, lastIndex + 1, msg);
-		ret->right = SPKDTreeInitHelp(split[1], SPKDArrayGetSize(split[1], kdArrMsg), dims, splitMethod, lastIndex + 1, msg);
-		ret->data = NULL;
-	}
-	*msg = SP_KDTREE_SUCCESS;
-	return ret;
-}
+typedef struct sp_config_t* SPConfig;
 
-SPPoint * SPKDTreeKNearestNeighbours(SPKDTreeNode tree, SPPoint p, int k)
-{
-	return NULL;
-}
+/**
+ * Creates a new system configuration struct. The configuration struct
+ * is initialized based on the configuration file given by 'filename'.
+ * 
+ * @param filename - the name of the configuration file
+ * @assert msg != NULL
+ * @param msg - pointer in which the msg returned by the function is stored
+ * @return NULL in case an error occurs. Otherwise, a pointer to a struct which
+ * 		   contains all system configuration.
+ * 
+ * The resulting value stored in msg is as follow:
+ * - SP_CONFIG_INVALID_ARGUMENT - if filename == NULL
+ * - SP_CONFIG_CANNOT_OPEN_FILE - if the configuration file given by filename cannot be open
+ * - SP_CONFIG_ALLOC_FAIL - if an allocation failure occurred
+ * - SP_CONFIG_INVALID_INTEGER - if a line in the config file contains invalid integer
+ * - SP_CONFIG_INVALID_STRING - if a line in the config file contains invalid string
+ * - SP_CONFIG_MISSING_DIR - if spImagesDirectory is missing
+ * - SP_CONFIG_MISSING_PREFIX - if spImagesPrefix is missing
+ * - SP_CONFIG_MISSING_SUFFIX - if spImagesSuffix is missing 
+ * - SP_CONFIG_MISSING_NUM_IMAGES - if spNumOfImages is missing
+ * - SP_CONFIG_SUCCESS - in case of success
+ *
+ *
+ */
+SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg);
 
-void SPKDTreeDestroy(SPKDTreeNode tree)
-{
-	if (tree != NULL)
-	{
-		SPKDTreeDestroy(tree->left);
-		SPKDTreeDestroy(tree->right);
-		SPKDTreeDestroy(tree->parent);
-		if (tree->data != NULL)
-			spPointDestroy(*(tree->data));
-		free(tree->data);
-		free(tree);
-	}
-}
+/*
+ * Returns true if spExtractionMode = true, false otherwise.
+ *
+ * @param config - the configuration structure
+ * @assert msg != NULL
+ * @param msg - pointer in which the msg returned by the function is stored
+ * @return true if spExtractionMode = true, false otherwise.
+ *
+ * - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+ * - SP_CONFIG_SUCCESS - in case of success
+ */
+bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/*
+ * Returns true if spMinimalGUI = true, false otherwise.
+ *
+ * @param config - the configuration structure
+ * @assert msg != NULL
+ * @param msg - pointer in which the msg returned by the function is stored
+ * @return true if spExtractionMode = true, false otherwise.
+ *
+ * - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+ * - SP_CONFIG_SUCCESS - in case of success
+ */
+bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/*
+* Returns the method set for splitting the kd tree.
+* @param config - the configuration structure
+* @assert msg != NULL
+* @param msg - pointer in which the msg returned by the function is stored
+* @return split method on success, default value (MAX_SPREAD) on failure
+*
+* - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+* - SP_CONFIG_SUCCESS - in case of success
+*/
+SP_KDTREE_SPLIT_METHOD spConfigGetKDTreeSplitMethod(SPConfig config, SP_CONFIG_MSG* msg);
+
+/*
+ * Returns the number of images set in the configuration file, i.e the value
+ * of spNumOfImages.
+ *
+ * @param config - the configuration structure
+ * @assert msg != NULL
+ * @param msg - pointer in which the msg returned by the function is stored
+ * @return positive integer in success, negative integer otherwise.
+ *
+ * - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+ * - SP_CONFIG_SUCCESS - in case of success
+ */
+int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/*
+ * Returns the number of features to be extracted. i.e the value
+ * of spNumOfFeatures.
+ *
+ * @param config - the configuration structure
+ * @assert msg != NULL
+ * @param msg - pointer in which the msg returned by the function is stored
+ * @return positive integer in success, negative integer otherwise.
+ *
+ * - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+ * - SP_CONFIG_SUCCESS - in case of success
+ */
+int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/**
+ * Returns the dimension of the PCA. i.e the value of spPCADimension.
+ *
+ * @param config - the configuration structure
+ * @assert msg != NULL
+ * @param msg - pointer in which the msg returned by the function is stored
+ * @return positive integer in success, negative integer otherwise.
+ *
+ * - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+ * - SP_CONFIG_SUCCESS - in case of success
+ */
+int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/**
+* Returns the level of the logger, i.e. the value of spLoggerLevel.
+* 1 indicates error level, 2 indicates warning level, 3 indicates info level,
+* 4 indicates debug level.
+*
+* @param config - the configuration structure
+* @assert msg != NULL
+* @param msg - pointer in which the msg returned by the function is stored
+* @return positive integer in success, negative integer otherwise.
+*
+* - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+* - SP_CONFIG_SUCCESS - in case of success
+*/
+int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/**
+* Returns the number of similar images to be displayed.
+*
+* @param config - the configuration structure
+* @assert msg != NULL
+* @param msg - pointer in which the msg returned by the function is stored
+* @return positive integer in success, negative integer otherwise.
+*
+* - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+* - SP_CONFIG_SUCCESS - in case of success
+*/
+int spConfigGetNumOfSimilarImages(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/**
+* Returns the valuf of KNN, i.e. the number of similar features to be selected.
+*
+* @param config - the configuration structure
+* @assert msg != NULL
+* @param msg - pointer in which the msg returned by the function is stored
+* @return positive integer in success, negative integer otherwise.
+*
+* - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
+* - SP_CONFIG_SUCCESS - in case of success
+*/
+int spConfigGetKNN(const SPConfig config, SP_CONFIG_MSG* msg);
+
+/**
+* The function stores in loggerFilename the value of spLoggerFilename.
+* Thus the address given by loggerFilename must contain enough space to
+* store the resulting string.
+*
+* @param loggerFilename - an address to store the result in, it must contain enough space
+* @param config - the configuration structure
+* @return
+*  - SP_CONFIG_INVALID_ARGUMENT - if loggerFilename == NULL or config == NULL
+*  - SP_CONFIG_SUCCESS - in case of success
+*/
+SP_CONFIG_MSG spConfigGetLoggerFilename(char* loggerFilename, const SPConfig config);
+
+/**
+ * Given an index 'index' the function stores in imagePath the full path of the
+ * ith image.
+ *
+ * For example:
+ * Given that the value of:
+ *  spImagesDirectory = "./images/"
+ *  spImagesPrefix = "img"
+ *  spImagesSuffix = ".png"
+ *  spNumOfImages = 17
+ *  index = 10
+ *
+ * The functions stores "./images/img10.png" to the address given by imagePath.
+ * Thus the address given by imagePath must contain enough space to
+ * store the resulting string.
+ *
+ * @param imagePath - an address to store the result in, it must contain enough space.
+ * @param config - the configuration structure
+ * @param index - the index of the image.
+ *
+ * @return
+ * - SP_CONFIG_INVALID_ARGUMENT - if imagePath == NULL or config == NULL
+ * - SP_CONFIG_INDEX_OUT_OF_RANGE - if index >= spNumOfImages
+ * - SP_CONFIG_SUCCESS - in case of success
+ */
+SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config,
+		int index);
+
+/**
+* Given an index 'index' the function stores in featsPath the full path of the
+* .feats file corresponding to the given image.
+* Thus the address given by featsPath must contain enough space to
+* store the resulting string.
+*
+* @param featsPath - an address to store the result in, it must contain enough space.
+* @param config - the configuration structure
+* @param index - the index of the image.
+*
+* @return
+* - SP_CONFIG_INVALID_ARGUMENT - if featsPath == NULL or config == NULL
+* - SP_CONFIG_INDEX_OUT_OF_RANGE - if index >= spNumOfImages
+* - SP_CONFIG_SUCCESS - in case of success
+*/
+SP_CONFIG_MSG spConfigGetFeatsPath(char* featsPath, const SPConfig config,
+	int index);
+
+/**
+ * The function stores in pcaPath the full path of the pca file.
+ * For example given the values of:
+ *  spImagesDirectory = "./images/"
+ *  spPcaFilename = "pca.yml"
+ *
+ * The functions stores "./images/pca.yml" to the address given by pcaPath.
+ * Thus the address given by pcaPath must contain enough space to
+ * store the resulting string.
+ *
+ * @param imagePath - an address to store the result in, it must contain enough space.
+ * @param config - the configuration structure
+ * @param index - the index of the image.
+ * @return
+ *  - SP_CONFIG_INVALID_ARGUMENT - if imagePath == NULL or config == NULL
+ *  - SP_CONFIG_SUCCESS - in case of success
+ */
+SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config);
+
+
+/**
+ * Frees all memory resources associate with config. 
+ * If config == NULL nothig is done.
+ */
+void spConfigDestroy(SPConfig config);
+
+#endif /* SPCONFIG_H_ */
