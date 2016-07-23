@@ -16,7 +16,7 @@ struct sp_config_t
 	int spNumOfFeatures;
 	bool spExtractionMode;
 	int spNumOfSimilarImages;
-	Method spKDTreeSplitMethod;
+	SP_KDTREE_SPLIT_METHOD spKDTreeSplitMethod;
 	int spKNN;
 	bool spMinimalGUI;
 	int spLoggerLevel;
@@ -239,17 +239,17 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			if (strcmp(varValue, "RANDOM") == 0)
 			{
-				config->spKDTreeSplitMethod = RANDOM;
+				config->spKDTreeSplitMethod = SP_KDTREE_RANDOM;
 				spKDTreeSplitMethodInit = true;
 			}
 			else if (strcmp(varValue, "MAX_SPREAD") == 0)
 			{
-				config->spKDTreeSplitMethod = MAX_SPREAD;
+				config->spKDTreeSplitMethod = SP_KDTREE_MAX_SPREAD;
 				spKDTreeSplitMethodInit = true;
 			}
 			else if (strcmp(varValue, "INCREMENTAL") == 0)
 			{
-				config->spKDTreeSplitMethod = INCREMENTAL;
+				config->spKDTreeSplitMethod = SP_KDTREE_INCREMENTAL;
 				spKDTreeSplitMethodInit = true;
 			}
 			else
@@ -379,7 +379,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 	if (!spNumOfSimilarImagesInit)
 		config->spNumOfSimilarImages = 1;
 	if (!spKDTreeSplitMethodInit)
-		config->spKDTreeSplitMethod = MAX_SPREAD;
+		config->spKDTreeSplitMethod = SP_KDTREE_MAX_SPREAD;
 	if (!spKNNInit)
 		config->spKNN = 1;
 	if (!spMinimalGUIInit)
@@ -416,13 +416,13 @@ bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG* msg)
 	return config->spMinimalGUI;
 }
 
-Method spConfigGetKDTreeSplitMethod(SPConfig config, SP_CONFIG_MSG* msg)
+SP_KDTREE_SPLIT_METHOD spConfigGetKDTreeSplitMethod(SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
 	{
 		*msg = SP_CONFIG_INVALID_ARGUMENT;
-		return MAX_SPREAD;
+		return SP_KDTREE_MAX_SPREAD;
 	}
 	*msg = SP_CONFIG_SUCCESS;
 	return config->spKDTreeSplitMethod;
