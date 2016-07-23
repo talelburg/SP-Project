@@ -112,16 +112,37 @@ SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD 
 	return ret;
 }
 
-SPPoint * SPKDTreeKNearestNeighbours(SPKDTreeNode tree, SPPoint p, int k)
+int* SPKDTreeKNearestNeighbours(SPKDTreeNode tree, SPPoint p, int k)
 {
-	SPBPQueue bpq = spBPQueueCreate(k);
+	int i;
+	int* res;
+	SPBPQueue bpq;
 
-	if(!bpq || !tree)
+	if(!tree)
 		return NULL;
+
+	bpq = spBPQueueCreate(k);
+	if(!bpq)
+		return NULL;
+
+	res = (int*) malloc(k * sizeof(int));
+	if(!res)
+	{
+		spBPQueueDestroy(bpq);
+		return NULL;
+	}
 
 	SPKDTreeKNNRecursive(tree, p, bpq);
 
-	return NULL;
+	for(i = 0; i < k; i++)
+	{
+		res[i] = spListElementGetIndex(spBPQueuePeek(bpq));
+		spBPQueueDequeue(bpq);
+	}
+
+	spBPQueueDestroy(bpq);
+
+	return res;
 }
 
 void SPKDTreeKNNRecursive(SPKDTreeNode tree, SPPoint p, SPBPQueue bpq)

@@ -22,7 +22,7 @@ int* SPQuerySolverSolve(SPKDTreeNode kdTreeRoot, SPPoint* queryFeatures, int que
 	int i, j;
 	int* res;
 	SPImageHits* imageHits;
-	SPPoint* nearestNeighbours;
+	int* nearestNeighbours;
 	
 	res = (int*)malloc(numOfSimilar * sizeof(int));
 	imageHits = (SPImageHits*)malloc(imagesAmount * sizeof(SPImageHits));
@@ -50,10 +50,7 @@ int* SPQuerySolverSolve(SPKDTreeNode kdTreeRoot, SPPoint* queryFeatures, int que
 			return NULL;
 		}
 		for(j = 0; j < k; j++)
-		{
-			imageHits[spPointGetIndex(nearestNeighbours[j])].hits += 1;
-			spPointDestroy(nearestNeighbours[j]);
-		}
+			imageHits[nearestNeighbours[j]].hits += 1;
 		free(nearestNeighbours);
 	}
 
