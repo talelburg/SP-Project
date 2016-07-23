@@ -262,9 +262,9 @@ SPPoint SPKDArrayGetPointByDim(SPKDArray kdArr, int index, int dim, SP_KDARRAY_M
 		return NULL;
 	}
 	if (dim == -1)
-		return SPPointCopy(kdArr->points[index]);
+		return spPointCopy(kdArr->points[index]);
 	else
-		return SPPointCopy(kdArr->points[kdArr->pointsByCoors[dim][index]]);
+		return spPointCopy(kdArr->points[kdArr->pointsByCoors[dim][index]]);
 }
 
 int SPKDArrayGetDims(SPKDArray kdArr, SP_KDARRAY_MSG * msg)

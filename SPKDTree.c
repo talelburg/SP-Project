@@ -82,9 +82,9 @@ SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD 
 			maxSpread = 0;
 			maxSpreadIndex = 0;
 			for (i = 0; i < dims; i++)
-			{
-				minVal = SPPointGetAxisCoor(SPKDArrayGetPointByDim(kdArr, 0, i, kdArrMsg), i);
-				maxVal = SPPointGetAxisCoor(SPKDArrayGetPointByDim(kdArr, size - 1, i, kdArrMsg), i);
+			{				
+				minVal = spPointGetAxisCoor(SPKDArrayGetPointByDim(kdArr, 0, i, kdArrMsg), i);
+				maxVal = spPointGetAxisCoor(SPKDArrayGetPointByDim(kdArr, size - 1, i, kdArrMsg), i);
 				spread = maxVal - minVal;
 				if (spread > maxSpread)
 				{
@@ -103,9 +103,9 @@ SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD 
 		}
 		split = SPKDArraySplit(kdArr, dim, kdArrMsg);
 		ret->dim = dim;
-		ret->val = SPPointGetAxisCoor(SPKDArrayGetPointByDim(split[0], SPKDArrayGetSize(split[0], kdArrMsg), dim, kdArrMsg), dim);
-		ret->left = SPKDTreeInitHelp(split[0], SPKDArrayGetSize(split[0], kdArrMsg), dims, splitMethod, lastIndex + 1, msg);
-		ret->right = SPKDTreeInitHelp(split[1], SPKDArrayGetSize(split[1], kdArrMsg), dims, splitMethod, lastIndex + 1, msg);
+		ret->val = spPointGetAxisCoor(SPKDArrayGetPointByDim(split[0], SPKDArrayGetSize(split[0], kdArrMsg), dim, kdArrMsg), dim);
+		ret->left = SPKDTreeInitHelp(split[0], SPKDArrayGetSize(split[0], kdArrMsg), splitMethod, lastIndex + 1, msg);
+		ret->right = SPKDTreeInitHelp(split[1], SPKDArrayGetSize(split[1], kdArrMsg), splitMethod, lastIndex + 1, msg);
 		ret->data = NULL;
 	}
 	*msg = SP_KDTREE_SUCCESS;
@@ -114,7 +114,58 @@ SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD 
 
 SPPoint * SPKDTreeKNearestNeighbours(SPKDTreeNode tree, SPPoint p, int k)
 {
+	SPBPQueue bpq = spBPQueueCreate(k);
+
+	if(!bpq || !tree)
+		return NULL;
+
+	SPKDTreeKNNRecursive(tree, p, bpq);
+
 	return NULL;
+}
+
+void SPKDTreeKNNRecursive(SPKDTreeNode tree, SPPoint p, SPBPQueue bpq)
+{
+	SPListElement listElement;
+	SPPoint treePoint;
+	bool searchedLeft;
+	double dist;
+
+	if(!bpq || !tree)
+		return;
+
+	treePoint = *(tree->data);
+
+	if(tree->left == NULL && tree->right == NULL)
+	{
+		listElement = spListElementCreate(spPointGetIndex(treePoint), spPointL2SquaredDistance(p, treePoint));
+		spBPQueueEnqueue(bpq, listElement);
+		spListElementDestroy(listElement);
+		return;
+	}
+
+	if(spPointGetAxisCoor(p, tree->dim) <= tree->val)
+	{
+		searchedLeft = true;
+		SPKDTreeKNNRecursive(tree->left, p, bpq);
+	}
+	else
+	{
+		searchedLeft = false;
+		SPKDTreeKNNRecursive(tree->right, p, bpq);
+	}
+
+	dist = tree->val - spPointGetAxisCoor(p, tree->dim);
+	if(dist < 0)
+		dist *= -1;
+
+	if(!spBPQueueIsFull(bpq) || dist < spBPQueueMaxValue(bpq))
+	{
+		if(searchedLeft)
+			SPKDTreeKNNRecursive(tree->right, p, bpq);
+		else
+			SPKDTreeKNNRecursive(tree->left, p, bpq);
+	}
 }
 
 void SPKDTreeDestroy(SPKDTreeNode tree)

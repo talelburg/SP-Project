@@ -7,6 +7,7 @@
 #include "SPPoint.h"
 #include "SPConfig.h"
 #include "SPKDArray.h"
+#include "SPBPriorityQueue.h"
 
 typedef enum sp_kdtree_msg_t {
 	SP_KDTREE_SUCCESS,
@@ -28,6 +29,8 @@ SPKDTreeNode SPKDTreeInit(SPPoint* arr, int size, int dims, SP_KDTREE_SPLIT_METH
 SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD splitMethod, int lastIndex, SP_KDTREE_MSG * msg);
 
 SPPoint* SPKDTreeKNearestNeighbours(SPKDTreeNode tree, SPPoint p, int k);
+
+void SPKDTreeKNNRecursive(SPKDTreeNode tree, SPPoint p, SPBPQueue bpq);
 
 void SPKDTreeDestroy(SPKDTreeNode tree);
 
