@@ -1,17 +1,9 @@
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
 #include "SPConfig.h"
 #define MAX_LEN 1024
 #define PRINT_ERROR(FILE, LINE, MSG) printf("File: FILE\nLine: LINE\nMessage: MSG\n");
 #define ERR_MSG_INVALID_LINE "Invalid configuration line"
 #define ERR_MSG_VALUE_CONSTRAINT "Invalid value - constraint not met"
 #define ERR_MSG_PARAMETER(PARAM_NAME) "Parameter PARAM_NAME is not set"
-typedef enum method {
-	RANDOM,
-	MAX_SPREAD,
-	INCREMENTAL
-} Method;
 
 struct sp_config_t 
 {
@@ -24,14 +16,14 @@ struct sp_config_t
 	int spNumOfFeatures;
 	bool spExtractionMode;
 	int spNumOfSimilarImages;
-	Method spKDTreeSplitMethod;
+	SP_KDTREE_SPLIT_METHOD spKDTreeSplitMethod;
 	int spKNN;
 	bool spMinimalGUI;
 	int spLoggerLevel;
 	char spLoggerFilename[MAX_LEN];
 };
 
-SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
+SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 {
 	SPConfig config = NULL;
 	FILE* file = NULL;
@@ -247,17 +239,17 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 		{
 			if (strcmp(varValue, "RANDOM") == 0)
 			{
-				config->spKDTreeSplitMethod = RANDOM;
+				config->spKDTreeSplitMethod = SP_KDTREE_RANDOM;
 				spKDTreeSplitMethodInit = true;
 			}
 			else if (strcmp(varValue, "MAX_SPREAD") == 0)
 			{
-				config->spKDTreeSplitMethod = MAX_SPREAD;
+				config->spKDTreeSplitMethod = SP_KDTREE_MAX_SPREAD;
 				spKDTreeSplitMethodInit = true;
 			}
 			else if (strcmp(varValue, "INCREMENTAL") == 0)
 			{
-				config->spKDTreeSplitMethod = INCREMENTAL;
+				config->spKDTreeSplitMethod = SP_KDTREE_INCREMENTAL;
 				spKDTreeSplitMethodInit = true;
 			}
 			else
@@ -387,7 +379,7 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 	if (!spNumOfSimilarImagesInit)
 		config->spNumOfSimilarImages = 1;
 	if (!spKDTreeSplitMethodInit)
-		config->spKDTreeSplitMethod = MAX_SPREAD;
+		config->spKDTreeSplitMethod = SP_KDTREE_MAX_SPREAD;
 	if (!spKNNInit)
 		config->spKNN = 1;
 	if (!spMinimalGUIInit)
@@ -400,7 +392,7 @@ SPConfig spConfigCreate(const char * filename, SP_CONFIG_MSG * msg)
 	return config;
 }
 
-bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG * msg)
+bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL) 
@@ -412,7 +404,7 @@ bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spExtractionMode;
 }
 
-bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG * msg)
+bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -424,7 +416,19 @@ bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spMinimalGUI;
 }
 
-int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG * msg)
+SP_KDTREE_SPLIT_METHOD spConfigGetKDTreeSplitMethod(SPConfig config, SP_CONFIG_MSG* msg)
+{
+	assert(msg != NULL);
+	if (config == NULL)
+	{
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return SP_KDTREE_MAX_SPREAD;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->spKDTreeSplitMethod;
+}
+
+int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -436,7 +440,7 @@ int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spNumOfImages;
 }
 
-int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG * msg)
+int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -448,7 +452,7 @@ int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spNumOfFeatures;
 }
 
-int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG * msg)
+int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -460,7 +464,7 @@ int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spPCADimension;
 }
 
-int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG * msg)
+int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -472,7 +476,31 @@ int spConfigGetLoggerLevel(const SPConfig config, SP_CONFIG_MSG * msg)
 	return config->spLoggerLevel;
 }
 
-SP_CONFIG_MSG spConfigGetLoggerFilename(char * loggerFilename, const SPConfig config)
+int spConfigGetNumOfSimilarImages(const SPConfig config, SP_CONFIG_MSG * msg)
+{
+	assert(msg != NULL);
+	if (config == NULL)
+	{
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return -1;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->spNumOfSimilarImages;
+}
+
+int spConfigGetKNN(const SPConfig config, SP_CONFIG_MSG * msg)
+{
+	assert(msg != NULL);
+	if (config == NULL)
+	{
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return -1;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->spKNN;
+}
+
+SP_CONFIG_MSG spConfigGetLoggerFilename(char* loggerFilename, const SPConfig config)
 {
 	if (config == NULL || loggerFilename == NULL)
 		return SP_CONFIG_INVALID_ARGUMENT;
@@ -480,9 +508,9 @@ SP_CONFIG_MSG spConfigGetLoggerFilename(char * loggerFilename, const SPConfig co
 	return SP_CONFIG_SUCCESS;
 }
 
-SP_CONFIG_MSG spConfigGetImagePath(char * imagePath, const SPConfig config, int index)
+SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config, int index)
 {
-	if (config == NULL || imagePath == NULL)
+	if (config == NULL || imagePath == NULL || index < 0)
 		return SP_CONFIG_INVALID_ARGUMENT;
 	if (index >= config->spNumOfImages)
 		return SP_CONFIG_INDEX_OUT_OF_RANGE;
@@ -490,7 +518,17 @@ SP_CONFIG_MSG spConfigGetImagePath(char * imagePath, const SPConfig config, int 
 	return SP_CONFIG_SUCCESS;
 }
 
-SP_CONFIG_MSG spConfigGetPCAPath(char * pcaPath, const SPConfig config)
+SP_CONFIG_MSG spConfigGetFeatsPath(char * featsPath, const SPConfig config, int index)
+{
+	if (config == NULL || featsPath == NULL || index < 0)
+		return SP_CONFIG_INVALID_ARGUMENT;
+	if (index >= config->spNumOfImages)
+		return SP_CONFIG_INDEX_OUT_OF_RANGE;
+	sprintf(featsPath, "%s%s%d.feats", config->spImagesDirectory, config->spImagesPrefix, index);
+	return SP_CONFIG_SUCCESS;
+}
+
+SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config)
 {
 	if (config == NULL || pcaPath == NULL)
 		return SP_CONFIG_INVALID_ARGUMENT;
@@ -500,5 +538,6 @@ SP_CONFIG_MSG spConfigGetPCAPath(char * pcaPath, const SPConfig config)
 
 void spConfigDestroy(SPConfig config)
 {
-	free(config);
+	if (config != NULL)
+		free(config);
 }
