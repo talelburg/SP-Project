@@ -1,5 +1,6 @@
 #include "SPKDArray.h"
 
+// A struct representing the KD-Array
 struct sp_kdarray_t
 {
 	SPPoint* points;
@@ -8,6 +9,7 @@ struct sp_kdarray_t
 	int size;
 };
 
+// A struct to help sort the points according to the different dimensions
 struct sp_sorting_helper_t
 {
 	SPPoint point;
@@ -16,13 +18,17 @@ struct sp_sorting_helper_t
 };
 typedef struct sp_sorting_helper_t* SPSortingHelper;
 
-int SPSortingHelperCompare(SPSortingHelper s1, SPSortingHelper s2)
+// Comparator for aforementioned sorting
+int SPSortingHelperCompare(const void* t1, const void* t2)
 {
-	assert(s1 != NULL && s2 != NULL);
-	if (spPointGetAxisCoor(s1->point, s1->dim) == spPointGetAxisCoor(s2->point, s2->dim)) {
-		return spPointGetIndex(s1->point) - spPointGetIndex(s2->point);
+	SPSortingHelper *s1, *s2;
+	assert(t1 != NULL && t2 != NULL);
+	s1 = (SPSortingHelper*) t1;
+	s2 = (SPSortingHelper*) t2;
+	if (spPointGetAxisCoor((*s1)->point, (*s1)->dim) == spPointGetAxisCoor((*s2)->point, (*s2)->dim)) {
+		return spPointGetIndex((*s1)->point) - spPointGetIndex((*s2)->point);
 	}
-	else if (spPointGetAxisCoor(s1->point, s1->dim) > spPointGetAxisCoor(s2->point, s2->dim)) {
+	else if (spPointGetAxisCoor((*s1)->point, (*s1)->dim) > spPointGetAxisCoor((*s2)->point, (*s2)->dim)) {
 		return 1;
 	}
 	return -1;
@@ -34,7 +40,7 @@ SPKDArray SPKDArrayInit(SPPoint* arr, int size, int dims, SP_KDARRAY_MSG* msg)
 	int i, j, k;
 	SPSortingHelper* sorter;
 	assert(msg != NULL);
-	if (arr == NULL || size <= 0 || dims <= 9 || dims >= 29)
+	if (arr == NULL || size <= 0 || dims <= 0)
 	{
 		*msg = SP_KDARRAY_INVALID_ARGUMENT;
 		return NULL;
@@ -45,6 +51,8 @@ SPKDArray SPKDArrayInit(SPPoint* arr, int size, int dims, SP_KDARRAY_MSG* msg)
 		*msg = SP_KDARRAY_ALLOC_FAIL;
 		return NULL;
 	}
+	
+	// Set kdArr fields, allocate memory
 	kdArr->dims = dims;
 	kdArr->size = size;
 	kdArr->points = (SPPoint*)malloc(size * sizeof(SPPoint));
@@ -70,10 +78,13 @@ SPKDArray SPKDArrayInit(SPPoint* arr, int size, int dims, SP_KDARRAY_MSG* msg)
 			return NULL;
 		}
 	}
-	for (i = 0; i < size; i++)
+	
+	for (i = 0; i < size; i++) //  Copy the points
 		kdArr->points[i] = spPointCopy(arr[i]);
-	for (k = 0; k < dims; k++)
+	
+	for (k = 0; k < dims; k++) // Now we sort the points according to dimension k
 	{
+		// Allocate helper array
 		sorter = (SPSortingHelper*)malloc(size * sizeof(SPSortingHelper));
 		if (sorter == NULL)
 		{
@@ -83,6 +94,7 @@ SPKDArray SPKDArrayInit(SPPoint* arr, int size, int dims, SP_KDARRAY_MSG* msg)
 		}
 		for (i = 0; i < size; i++)
 		{
+			// Allocate and initialize sorter[i]
 			sorter[i] = (SPSortingHelper)malloc(sizeof(*sorter[i]));
 			if (sorter[i] == NULL)
 			{
@@ -95,16 +107,19 @@ SPKDArray SPKDArrayInit(SPPoint* arr, int size, int dims, SP_KDARRAY_MSG* msg)
 			}
 			sorter[i]->point = spPointCopy(kdArr->points[i]);
 			sorter[i]->dim = k;
-			sorter[i]->originalIndex;
+			sorter[i]->originalIndex = i;
 		}
-		qsort(sorter, size, sizeof(SPSortingHelper), SPSortingHelperCompare);
-		for (i = 0; i < size; i++)
+		qsort(sorter, size, sizeof(SPSortingHelper), SPSortingHelperCompare); // Now sort
+		for (i = 0; i < size; i++) // And update the appropriate line of pointsByCoors
 		{
-			kdArr->pointsByCoors[i] = sorter[i]->originalIndex;
+			kdArr->pointsByCoors[k][i] = sorter[i]->originalIndex;
+			spPointDestroy(sorter[i]->point);
 			free(sorter[i]);
 		}
 		free(sorter);
 	}
+	
+	// Done
 	*msg = SP_KDARRAY_SUCCESS;
 	return kdArr;
 }
@@ -135,6 +150,8 @@ SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 		free(ret);
 		return NULL;
 	}
+	
+	// Allocate everything we need
 	ret[0] = (SPKDArray)malloc(sizeof(*ret[0]));
 	ret[1] = (SPKDArray)malloc(sizeof(*ret[1]));
 	if (ret[0] == NULL || ret[1] == NULL)
@@ -145,11 +162,13 @@ SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 		free(ret);
 		return NULL;
 	}
+	sizeOfLeft = kdArr->size / 2 + kdArr->size % 2;
+	sizeOfRight = kdArr->size - sizeOfLeft;
 	ret[0]->pointsByCoors = (int**)malloc(kdArr->dims * sizeof(int*));
 	ret[0]->points = (SPPoint*)malloc(sizeOfLeft * sizeof(SPPoint));
 	ret[1]->pointsByCoors = (int**)malloc(kdArr->dims * sizeof(int*));
 	ret[1]->points = (SPPoint*)malloc(sizeOfRight * sizeof(SPPoint));
-	if (ret[0]->pointsByCoors == NULL || ret[0]->points == NULL || ret[1]->pointsByCoors == NULL || ret[1]->points)
+	if (ret[0]->pointsByCoors == NULL || ret[0]->points == NULL || ret[1]->pointsByCoors == NULL || ret[1]->points == NULL)
 	{
 		*msg = SP_KDARRAY_ALLOC_FAIL;
 		free(ret[0]->pointsByCoors);
@@ -183,8 +202,6 @@ SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 			return NULL;
 		}
 	}
-	sizeOfLeft = kdArr->size / 2 + kdArr->size % 2;
-	sizeOfRight = kdArr->size - sizeOfLeft;
 	isLeft = (bool*)malloc(kdArr->size * sizeof(bool));
 	leftMap = (int*)malloc(kdArr->size * sizeof(int));
 	rightMap = (int*)malloc(kdArr->size * sizeof(int));
@@ -203,11 +220,11 @@ SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 	ret[0]->size = sizeOfLeft;
 	ret[1]->dims = kdArr->dims;
 	ret[1]->size = sizeOfRight;
-	for (i = 0; i < kdArr->size; i++)
+	for (i = 0; i < kdArr->size; i++) //  Check for each point if it belongs in the left half
 		isLeft[kdArr->pointsByCoors[coor][i]] = (i < sizeOfLeft ? true : false);
 	rightIndex = 0;
 	leftIndex = 0;
-	for (i = 0; i < kdArr->size; i++)
+	for (i = 0; i < kdArr->size; i++) // Update the maps, like in the suggested solution
 	{
 		if (isLeft[i])
 		{
@@ -224,7 +241,8 @@ SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 			rightIndex++;
 		}
 	}
-	for (i = 0; i < kdArr->dims; i++)
+	
+	for (i = 0; i < kdArr->dims; i++) // Set pointsByCoors for the two KD-Arrays
 	{
 		leftIndex = 0;
 		rightIndex = 0;
@@ -242,6 +260,8 @@ SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 			}
 		}
 	}
+	
+	// All done
 	free(isLeft);
 	free(leftMap);
 	free(rightMap);
@@ -250,6 +270,7 @@ SPKDArray* SPKDArraySplit(SPKDArray kdArr, int coor, SP_KDARRAY_MSG* msg)
 
 SPPoint SPKDArrayGetPointByDim(SPKDArray kdArr, int index, int dim, SP_KDARRAY_MSG* msg)
 {
+	SPPoint ret;
 	assert(msg != NULL);
 	if (kdArr == NULL || dim < -1 || index < 0 || index >= kdArr->size)
 	{
@@ -262,9 +283,14 @@ SPPoint SPKDArrayGetPointByDim(SPKDArray kdArr, int index, int dim, SP_KDARRAY_M
 		return NULL;
 	}
 	if (dim == -1)
-		return spPointCopy(kdArr->points[index]);
+		ret = spPointCopy(kdArr->points[index]);
 	else
-		return spPointCopy(kdArr->points[kdArr->pointsByCoors[dim][index]]);
+		ret = spPointCopy(kdArr->points[kdArr->pointsByCoors[dim][index]]);
+	if (ret == NULL)
+		*msg = SP_KDARRAY_ALLOC_FAIL;
+	else
+		*msg = SP_KDARRAY_SUCCESS;
+	return ret;
 }
 
 int SPKDArrayGetDims(SPKDArray kdArr, SP_KDARRAY_MSG * msg)
@@ -273,7 +299,7 @@ int SPKDArrayGetDims(SPKDArray kdArr, SP_KDARRAY_MSG * msg)
 	if (kdArr == NULL)
 	{
 		*msg = SP_KDARRAY_INVALID_ARGUMENT;
-		return NULL;
+		return -1;
 	}
 	return kdArr->dims;
 }
@@ -284,7 +310,7 @@ int SPKDArrayGetSize(SPKDArray kdArr, SP_KDARRAY_MSG * msg)
 	if (kdArr == NULL)
 	{
 		*msg = SP_KDARRAY_INVALID_ARGUMENT;
-		return NULL;
+		return -1;
 	}
 	return kdArr->size;
 }

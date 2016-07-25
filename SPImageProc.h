@@ -1,7 +1,7 @@
 #ifndef SPIMAGEPROC_H_
 #define SPIMAGEPROC_H_
-//#include <opencv2/core.hpp>
-//#include <opencv2/imgcodecs.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <vector>
 
 extern "C" {
@@ -16,7 +16,7 @@ namespace sp {
  */
 class ImageProc {
 private:
-	/*const char* windowName = "Software Project CBIR";
+	const char* windowName = "Software Project CBIR";
 	int pcaDim;
 	int numOfImages;
 	int numOfFeatures;
@@ -27,7 +27,7 @@ private:
 	void getFeatures(std::vector<cv::Mat>&,
 			cv::Mat&);
 	void preprocess(const SPConfig config);
-	void initPCAFromFile(const SPConfig config);*/
+	void initPCAFromFile(const SPConfig config);
 public:
 
 	/**

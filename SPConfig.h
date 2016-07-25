@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <string.h>
 #include "SPKDTree.h"
-//#include "SPLogger.h"
+#include "SPKDTreeSplitMethod.h"
 
 /**
  * A data-structure which is used for configuring the system.
@@ -79,7 +79,7 @@ bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG* msg);
  * - SP_CONFIG_INVALID_ARGUMENT - if config == NULL
  * - SP_CONFIG_SUCCESS - in case of success
  */
-bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG* msg);
+bool spConfigMinimalGui(const SPConfig config, SP_CONFIG_MSG* msg);
 
 /*
 * Returns the method set for splitting the kd tree.
@@ -246,7 +246,6 @@ SP_CONFIG_MSG spConfigGetFeatsPath(char* featsPath, const SPConfig config,
  *
  * @param imagePath - an address to store the result in, it must contain enough space.
  * @param config - the configuration structure
- * @param index - the index of the image.
  * @return
  *  - SP_CONFIG_INVALID_ARGUMENT - if imagePath == NULL or config == NULL
  *  - SP_CONFIG_SUCCESS - in case of success

@@ -1,10 +1,11 @@
 #include "SPKDTree.h"
 
+// A struct to represent a KD-Tree
 struct sp_kd_tree_node_t 
 {
 	int dim;
 	double val;
-	SPKDTreeNode left, right, parent;
+	SPKDTreeNode left, right;
 	SPPoint* data;
 };
 
@@ -14,53 +15,50 @@ SPKDTreeNode SPKDTreeInit(SPPoint * arr, int size, int dims, SP_KDTREE_SPLIT_MET
 	SP_KDARRAY_MSG kdArrMsg;
 	SPKDTreeNode ret;
 	assert(msg != NULL);
-	if (arr == NULL || size <= 0 || dims <= 9 || dims >= 29)
+	if (arr == NULL || size <= 0 || dims <= 0)
 	{
 		*msg = SP_KDTREE_INVALID_ARGUMENT;
 		return NULL;
 	}
-	kdArr = SPKDArrayInit(arr, size, dims, &kdArrMsg);
+	
+	kdArr = SPKDArrayInit(arr, size, dims, &kdArrMsg); // Initialize the KD-Array
 	if (kdArrMsg == SP_KDARRAY_ALLOC_FAIL)
 	{
 		*msg = SP_KDTREE_ALLOC_FAIL;
 		return NULL;
 	}
-	else if (kdArrMsg != SP_KDARRAY_SUCCESS)
-	{
-		*msg = SP_KDTREE_UNKNOWN_ERROR;
-		return NULL;
-	}
-	return SPKDTreeInitHelp(kdArr, size, splitMethod, -1, msg);
+	
+	// Employ recursive helper
+	ret = SPKDTreeInitHelp(kdArr, size, splitMethod, -1, msg); 
+	
+	// All done
+	SPKDArrayDestroy(kdArr);
+	return ret;
 }
 
 SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD splitMethod, int lastIndex, SP_KDTREE_MSG * msg)
 {
 	int dim, dims, maxSpread, maxSpreadIndex, spread, i, minVal, maxVal;
-	SP_KDARRAY_MSG* kdArrMsg;
+	SP_KDARRAY_MSG kdArrMsg;
 	SPKDArray* split;
-	SPKDArray kdArr;
-	SPKDTreeNode ret, right, left;
+	SPKDTreeNode ret;
+	SPPoint workPoint;
 	assert(msg != NULL);
 	if (kdArr == NULL || size <= 0 || lastIndex < -1)
 	{
 		*msg = SP_KDTREE_INVALID_ARGUMENT;
 		return NULL;
 	}
+	// Allocate memory
 	ret = (SPKDTreeNode)malloc(sizeof(*ret));
 	if (ret == NULL)
 	{
 		*msg = SP_KDTREE_ALLOC_FAIL;
 		return NULL;
 	}
-	kdArrMsg = (SP_KDARRAY_MSG*)malloc(sizeof(SP_KDARRAY_MSG));
-	if (kdArrMsg == NULL)
-	{
-		*msg = SP_KDTREE_ALLOC_FAIL;
-		free(ret);
-		return NULL;
-	}
 	if (size == 1)
 	{
+		// Returned node will be a leaf
 		ret->dim = -1;
 		ret->val = -1.0;
 		ret->left = (ret->right = NULL);
@@ -71,20 +69,28 @@ SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD 
 			free(ret);
 			return NULL;
 		}
-		*(ret->data) = SPKDArrayGetPointByDim(kdArr, 0, -1, kdArrMsg);
+		*(ret->data) = SPKDArrayGetPointByDim(kdArr, 0, -1, &kdArrMsg); // Gets the only point in the KD-Array
 	}
 	else
 	{
-		dims = SPKDArrayGetDims(kdArr, kdArrMsg);
+		// Returned node is not a leaf
+		dims = SPKDArrayGetDims(kdArr, &kdArrMsg);
+		
+		// Calculate the splitting dimension
 		switch (splitMethod)
 		{
 		case SP_KDTREE_MAX_SPREAD:
 			maxSpread = 0;
 			maxSpreadIndex = 0;
+			// calculate the maximum spread dimension
 			for (i = 0; i < dims; i++)
-			{				
-				minVal = spPointGetAxisCoor(SPKDArrayGetPointByDim(kdArr, 0, i, kdArrMsg), i);
-				maxVal = spPointGetAxisCoor(SPKDArrayGetPointByDim(kdArr, size - 1, i, kdArrMsg), i);
+			{
+				workPoint = SPKDArrayGetPointByDim(kdArr, 0, i, &kdArrMsg);
+				minVal = spPointGetAxisCoor(workPoint, i);
+				spPointDestroy(workPoint);
+				workPoint = SPKDArrayGetPointByDim(kdArr, size - 1, i, &kdArrMsg);
+				maxVal = spPointGetAxisCoor(workPoint, i);
+				spPointDestroy(workPoint);
 				spread = maxVal - minVal;
 				if (spread > maxSpread)
 				{
@@ -101,92 +107,134 @@ SPKDTreeNode SPKDTreeInitHelp(SPKDArray kdArr, int size, SP_KDTREE_SPLIT_METHOD 
 			dim = (lastIndex + 1) % dims;
 			break;
 		}
-		split = SPKDArraySplit(kdArr, dim, kdArrMsg);
+		
+		split = SPKDArraySplit(kdArr, dim, &kdArrMsg); // Split the KD-Array according to the splitting dimension
+		workPoint = SPKDArrayGetPointByDim(split[0], SPKDArrayGetSize(split[0], &kdArrMsg) - 1, dim, &kdArrMsg);
 		ret->dim = dim;
-		ret->val = spPointGetAxisCoor(SPKDArrayGetPointByDim(split[0], SPKDArrayGetSize(split[0], kdArrMsg), dim, kdArrMsg), dim);
-		ret->left = SPKDTreeInitHelp(split[0], SPKDArrayGetSize(split[0], kdArrMsg), splitMethod, lastIndex + 1, msg);
-		ret->right = SPKDTreeInitHelp(split[1], SPKDArrayGetSize(split[1], kdArrMsg), splitMethod, lastIndex + 1, msg);
+		ret->val = spPointGetAxisCoor(workPoint, dim);
+		
+		// Employ recursion to calculate subtrees
+		ret->left = SPKDTreeInitHelp(split[0], SPKDArrayGetSize(split[0], &kdArrMsg), splitMethod, lastIndex + 1, msg);
+		ret->right = SPKDTreeInitHelp(split[1], SPKDArrayGetSize(split[1], &kdArrMsg), splitMethod, lastIndex + 1, msg);
 		ret->data = NULL;
+		
+		// Get rid of unneeded memory
+		SPKDArrayDestroy(split[0]);
+		SPKDArrayDestroy(split[1]);
+		free(split);
+		spPointDestroy(workPoint);
 	}
+	
+	// All done
 	*msg = SP_KDTREE_SUCCESS;
 	return ret;
 }
 
-int* SPKDTreeKNearestNeighbours(SPKDTreeNode tree, SPPoint p, int k)
+int* SPKDTreeKNN(SPKDTreeNode tree, SPPoint p, int k, SP_KDTREE_MSG* msg)
 {
 	int i;
 	int* res;
 	SPBPQueue bpq;
+	SPListElement head;
 
-	if(!tree)
+	if(tree == NULL || k <= 0)
+	{
+		*msg = SP_KDTREE_INVALID_ARGUMENT;
 		return NULL;
+	}
 
 	bpq = spBPQueueCreate(k);
-	if(!bpq)
+	if(bpq == NULL)
+	{
+		*msg = SP_KDTREE_ALLOC_FAIL;
 		return NULL;
+	}
 
 	res = (int*) malloc(k * sizeof(int));
-	if(!res)
+	if(res == NULL)
+	{
+		*msg = SP_KDTREE_ALLOC_FAIL;
+		spBPQueueDestroy(bpq);
+		return NULL;
+	}
+
+	// Call SPKDTreeKNNRecursive to fill the bpq with the k nearest neighbors
+	SPKDTreeKNNRecursive(tree, p, bpq, msg);
+	if (*msg != SP_KDTREE_SUCCESS)
 	{
 		spBPQueueDestroy(bpq);
 		return NULL;
 	}
 
-	SPKDTreeKNNRecursive(tree, p, bpq);
-
+	// Cast the bpq to an array
 	for(i = 0; i < k; i++)
 	{
-		res[i] = spListElementGetIndex(spBPQueuePeek(bpq));
+		head = spBPQueuePeek(bpq);
+		res[i] = spListElementGetIndex(head);
+		spListElementDestroy(head);
 		spBPQueueDequeue(bpq);
 	}
 
 	spBPQueueDestroy(bpq);
 
+	*msg = SP_KDTREE_SUCCESS;
 	return res;
 }
 
-void SPKDTreeKNNRecursive(SPKDTreeNode tree, SPPoint p, SPBPQueue bpq)
+void SPKDTreeKNNRecursive(SPKDTreeNode treeNode, SPPoint p, SPBPQueue bpq, SP_KDTREE_MSG* msg)
 {
 	SPListElement listElement;
 	SPPoint treePoint;
 	bool searchedLeft;
 	double dist;
 
-	if(!bpq || !tree)
-		return;
-
-	treePoint = *(tree->data);
-
-	if(tree->left == NULL && tree->right == NULL)
+	if(bpq == NULL || treeNode == NULL)
 	{
-		listElement = spListElementCreate(spPointGetIndex(treePoint), spPointL2SquaredDistance(p, treePoint));
-		spBPQueueEnqueue(bpq, listElement);
-		spListElementDestroy(listElement);
+		*msg = SP_KDTREE_INVALID_ARGUMENT;
 		return;
 	}
 
-	if(spPointGetAxisCoor(p, tree->dim) <= tree->val)
+	// If treeNode is a leaf
+	if(treeNode->left == NULL && treeNode->right == NULL)
+	{
+		treePoint = *(treeNode->data);
+		listElement = spListElementCreate(spPointGetIndex(treePoint), spPointL2SquaredDistance(p, treePoint));
+		spBPQueueEnqueue(bpq, listElement);
+		spListElementDestroy(listElement);
+		*msg = SP_KDTREE_SUCCESS;
+		return;
+	}
+
+	// Turn to search the tree that would've contain the point p (if it was in the tree)
+	if(spPointGetAxisCoor(p, treeNode->dim) <= treeNode->val)
 	{
 		searchedLeft = true;
-		SPKDTreeKNNRecursive(tree->left, p, bpq);
+		SPKDTreeKNNRecursive(treeNode->left, p, bpq, msg);
+		if (*msg != SP_KDTREE_SUCCESS)
+			return;
 	}
 	else
 	{
 		searchedLeft = false;
-		SPKDTreeKNNRecursive(tree->right, p, bpq);
+		SPKDTreeKNNRecursive(treeNode->right, p, bpq, msg);
+		if (*msg != SP_KDTREE_SUCCESS)
+			return;
 	}
 
-	dist = tree->val - spPointGetAxisCoor(p, tree->dim);
+	// dist = |treeNode.val - p[treeNode.dim]|
+	dist = treeNode->val - spPointGetAxisCoor(p, treeNode->dim);
 	if(dist < 0)
 		dist *= -1;
+	//dist *= dist;
 
 	if(!spBPQueueIsFull(bpq) || dist < spBPQueueMaxValue(bpq))
 	{
 		if(searchedLeft)
-			SPKDTreeKNNRecursive(tree->right, p, bpq);
+			SPKDTreeKNNRecursive(treeNode->right, p, bpq, msg);
 		else
-			SPKDTreeKNNRecursive(tree->left, p, bpq);
+			SPKDTreeKNNRecursive(treeNode->left, p, bpq, msg);
 	}
+	
 }
 
 void SPKDTreeDestroy(SPKDTreeNode tree)
@@ -195,7 +243,6 @@ void SPKDTreeDestroy(SPKDTreeNode tree)
 	{
 		SPKDTreeDestroy(tree->left);
 		SPKDTreeDestroy(tree->right);
-		SPKDTreeDestroy(tree->parent);
 		if (tree->data != NULL)
 			spPointDestroy(*(tree->data));
 		free(tree->data);

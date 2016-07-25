@@ -51,7 +51,7 @@ void sp::ImageProc::initFromConfig(const SPConfig config) {
 		spLoggerPrintError(NUM_OF_FEATS_ERROR, __FILE__, __func__, __LINE__);
 		throw Exception();
 	}
-	minimalGui = spConfigMinialGui(config, &msg);
+	minimalGui = spConfigMinimalGui(config, &msg);
 	if (msg != SP_CONFIG_SUCCESS) {
 		spLoggerPrintError(MINIMAL_GUI_ERROR, __FILE__, __func__, __LINE__);
 		throw Exception();
@@ -202,6 +202,8 @@ SPPoint* sp::ImageProc::getImageFeatures(const char* imagePath, int index,
 		}
 		resPoints[i] = spPointCreate(pcaSift, pcaDim, index);
 	}
+	// TODO: delete if they don't update, the following line is ours
+	//free(pcaSift);
 	return resPoints;
 }
 

@@ -1,10 +1,57 @@
 #include "SPConfig.h"
+
 #define MAX_LEN 1024
-#define PRINT_ERROR(FILE, LINE, MSG) printf("File: FILE\nLine: LINE\nMessage: MSG\n");
+
+// Macros for printing errors
+#define PRINT_ERROR(FILE, LINE, MSG) printf("File:%s\nLine:%d\nMessage:%s\n", FILE, LINE, MSG);
 #define ERR_MSG_INVALID_LINE "Invalid configuration line"
 #define ERR_MSG_VALUE_CONSTRAINT "Invalid value - constraint not met"
 #define ERR_MSG_PARAMETER(PARAM_NAME) "Parameter PARAM_NAME is not set"
 
+// Variable names
+#define IMAGES_DIRECTORY "spImagesDirectory"
+#define IMAGES_PREFIX "spImagesPrefix"
+#define IMAGES_SUFFIX "spImagesSuffix"
+#define NUM_IMAGES "spNumOfImages"
+#define PCA_DIM "spPCADimension"
+#define PCA_FILENAME "spPCAFilename"
+#define NUM_FEATURES "spNumOfFeatures"
+#define EXTRACTION_MODE "spExtractionMode"
+#define NUM_SIMILAR_IMAGES "spNumOfSimilarImages"
+#define KDTREE_SPLIT_METHOD "spKDTreeSplitMethod"
+#define KNN "spKNN"
+#define MINIMAL_GUI "spMinimalGUI"
+#define LOGGER_LEVEL "spLoggerLevel"
+#define LOGGER_FILENAME "spLoggerFilename"
+
+#define IS_VALID_SUFFIX(STRING) (strcmp(STRING, ".jpg") == 0 || strcmp(STRING, ".png") == 0 \
+		|| strcmp(STRING, ".bmp") == 0 || strcmp(STRING, ".gif") == 0)
+
+// Values
+#define TRUE "true"
+#define FALSE "false"
+
+#define KDTREE_SPLIT_RANDOM "RANDOM"
+#define KDTREE_SPLIT_MAX_SPREAD "MAX_SPREAD"
+#define KDTREE_SPLIT_INCREMENTAL "INCREMENTAL"
+
+// Constraints
+#define MIN_DIM 10
+#define MAX_DIM 28
+
+// Default values
+#define DEF_PCA_DIM 20
+#define DEF_PCA_FILENAME "pca.yml"
+#define DEF_NUM_FEATURES 100
+#define DEF_EXTRACTION_MODE true
+#define DEF_NUM_SIMILAR_IMAGES 1
+#define DEF_KDTREE_SPLIT_METHOD SP_KDTREE_MAX_SPREAD
+#define DEF_KNN 1
+#define DEF_MINIMAL_GUI false
+#define DEF_LOGGER_LEVEL 3
+#define DEF_LOGGER_FILENAME "stdout"
+
+// A struct representing the configuration
 struct sp_config_t 
 {
 	char spImagesDirectory[MAX_LEN];
@@ -25,12 +72,21 @@ struct sp_config_t
 
 SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 {
+	// To be returned
 	SPConfig config = NULL;
-	FILE* file = NULL;
-	char line[MAX_LEN];
-	char numberChecker[MAX_LEN];
-	char* varName;
-	char* varValue;
+	
+	// To be used during run
+	FILE* file = NULL; 
+	char line[MAX_LEN]; 
+	char numberChecker[MAX_LEN]; 
+	char *varName, *varValue;
+	int lineNum; 
+	int i;
+	int varNameStart, varNameLen;
+	int varValueStart, varValueLen;
+	int numberValue;
+	
+	// These help track what is initialized
 	bool spImagesDirectoryInit = false;
 	bool spImagesPrefixInit = false;
 	bool spImagesSuffixInit = false;
@@ -45,13 +101,9 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 	bool spMinimalGUIInit = false;
 	bool spLoggerLevelInit = false;
 	bool spLoggerFilenameInit = false;
-	int lineNum; 
-	int i;
-	int varNameStart, varNameLen;
-	int varValueStart, varValueLen;
-	int numberValue;
+	
 	assert(msg != NULL);
-	if (filename = NULL)
+	if (filename == NULL)
 	{
 		*msg = SP_CONFIG_INVALID_ARGUMENT;
 		return NULL;
@@ -67,38 +119,48 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		*msg = SP_CONFIG_ALLOC_FAIL;
 		return NULL;
 	}
+	
 	lineNum = 0;
 	while (fgets(line, MAX_LEN, file))
 	{
+		i = 0;
 		lineNum++;
-		while (line[i] == ' ' || line[i] == '\t') 
+		while (line[i] == ' ' || line[i] == '\t') // Ignore whitespace before variable name
 			i++;
-		if (line[i] == '#')
-		{
+		if (line[i] == '#' || line[i] == '\n') // Either comment or empty line
 			continue;
-		}
 		varNameStart = i;
-		while (line[i] != ' ' && line[i] != '\t' && line[i] != '=')
+		while (line[i] != ' ' && line[i] != '\t' && line[i] != '=') // Read variable name
+		{
+			if (line[i] == '\n') // If line ends amidst variable name
+			{
+				PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
+				free(config);
+				*msg = SP_CONFIG_INVALID_STRING;
+				return NULL;
+			}
 			i++;
-		varNameLen = i - varNameStart + 1;
-		while (line[i] == ' ' || line[i] == '\t')
+		}
+		varNameLen = i - varNameStart;
+		while (line[i] == ' ' || line[i] == '\t') // Ignore whitespace after variable name
 			i++;
-		if (line[i] != '=') 
+		if (line[i] != '=') // Next non-whitespace character must be equals
 		{
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 			free(config);
 			*msg = SP_CONFIG_INVALID_STRING;
 			return NULL;
 		}
-		while (line[i] == ' ' || line[i] == '\t')
+		i++;
+		while (line[i] == ' ' || line[i] == '\t') // Ignore whitespace before variable value
 			i++;
 		varValueStart = i;
-		while (line[i] != ' ' && line[i] != '\t')
+		while (line[i] != ' ' && line[i] != '\t' && line[i] != '\n') // Read variable value
 			i++;
-		varValueLen = i - varValueStart + 1;
-		while (line[i] == ' ' || line[i] == '\t')
+		varValueLen = i - varValueStart;
+		while (line[i] == ' ' || line[i] == '\t') // Ignore whitespace after variable value
 			i++;
-		if (line[i] != '\n')
+		if (line[i] != '\n') // Next non-whitespace character must be new line
 		{
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 			free(config);
@@ -109,30 +171,31 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		varValue = (char*)malloc((varValueLen + 1) * sizeof(char));
 		if (varName == NULL || varValue == NULL) 
 		{
-			printf("Allocation failure");
 			free(config);
 			free(varName);
 			free(varValue);
 			*msg = SP_CONFIG_ALLOC_FAIL;
 			return NULL;
 		}
-		strncpy(varName, line + varNameStart, varNameLen);
-		varName[varNameLen] = '\0';
-		strncpy(varValue, line + varValueStart, varNameLen);
-		varValue[varValueLen] = '\0';
-		if (strcmp(varName, "spImagesDirectory") == 0)
+		strncpy(varName, line + varNameStart, varNameLen); // Copy variable name
+		varName[varNameLen] = '\0'; // Add null terminator
+		strncpy(varValue, line + varValueStart, varValueLen); // Copy variable value
+		varValue[varValueLen] = '\0'; // Add null terminator
+		
+		// Check which variable the line declares
+		if (strcmp(varName, IMAGES_DIRECTORY) == 0)
 		{
 			sprintf(config->spImagesDirectory, "%s", varValue);
 			spImagesDirectoryInit = true;
 		}
-		else if (strcmp(varName, "spImagesPrefix") == 0)
+		else if (strcmp(varName, IMAGES_PREFIX) == 0)
 		{
 			sprintf(config->spImagesPrefix, "%s", varValue);
 			spImagesPrefixInit = true;
 		}
-		else if (strcmp(varName, "spImagesSuffix") == 0)
+		else if (strcmp(varName, IMAGES_SUFFIX) == 0)
 		{
-			if (strcmp(varValue, ".jpg") != 0 && strcmp(varValue, ".png") != 0 && strcmp(varValue, ".bmp") != 0 && strcmp(varValue, ".gif") != 0)
+			if (!IS_VALID_SUFFIX(varValue))
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
@@ -144,8 +207,9 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			sprintf(config->spImagesSuffix, "%s", varValue);
 			spImagesSuffixInit = true;
 		}
-		else if (strcmp(varName, "spNumOfImages") == 0)
+		else if (strcmp(varName, NUM_IMAGES) == 0)
 		{
+			// atoi ignores certain non number characters, so we check the value is correct
 			numberValue = atoi(varValue);
 			sprintf(numberChecker, "%d", numberValue);
 			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 0)
@@ -160,11 +224,12 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			config->spNumOfImages = numberValue;
 			spNumOfImagesInit = true;
 		}
-		else if (strcmp(varName, "spPCADimension") == 0)
+		else if (strcmp(varName, PCA_DIM) == 0)
 		{
+			// See comment at line 205
 			numberValue = atoi(varValue);
 			sprintf(numberChecker, "%d", numberValue);
-			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 9 || numberValue >= 29)
+			if (strcmp(numberChecker, varValue) != 0 || numberValue < MIN_DIM || numberValue > MAX_DIM)
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
@@ -176,13 +241,14 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			config->spPCADimension = numberValue;
 			spPCADimensionInit = true;
 		}
-		else if (strcmp(varName, "spPCAFilename") == 0)
+		else if (strcmp(varName, PCA_FILENAME) == 0)
 		{
 			sprintf(config->spPCAFilename, "%s", varValue);
 			spPCAFilenameInit = true;
 		}
-		else if (strcmp(varName, "spNumOfFeatures") == 0)
+		else if (strcmp(varName, NUM_FEATURES) == 0)
 		{
+			// See comment at line 205
 			numberValue = atoi(varValue);
 			sprintf(numberChecker, "%d", numberValue);
 			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 0)
@@ -197,7 +263,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			config->spNumOfFeatures = numberValue;
 			spNumOfFeaturesInit = true;
 		}
-		else if (strcmp(varName, "spExtractionMode") == 0)
+		else if (strcmp(varName, EXTRACTION_MODE) == 0)
 		{
 			if (strcmp(varValue, "true") == 0)
 			{
@@ -219,8 +285,9 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 				return NULL;
 			}
 		}
-		else if (strcmp(varName, "spNumOfSimilarImages") == 0)
+		else if (strcmp(varName, NUM_SIMILAR_IMAGES) == 0)
 		{
+			// See comment at line 205
 			numberValue = atoi(varValue);
 			sprintf(numberChecker, "%d", numberValue);
 			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 0)
@@ -235,19 +302,19 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			config->spNumOfSimilarImages = numberValue;
 			spNumOfSimilarImagesInit = true;
 		}
-		else if (strcmp(varName, "spKDTreeSplitMethod") == 0)
+		else if (strcmp(varName, KDTREE_SPLIT_METHOD) == 0)
 		{
-			if (strcmp(varValue, "RANDOM") == 0)
+			if (strcmp(varValue, KDTREE_SPLIT_RANDOM) == 0)
 			{
 				config->spKDTreeSplitMethod = SP_KDTREE_RANDOM;
 				spKDTreeSplitMethodInit = true;
 			}
-			else if (strcmp(varValue, "MAX_SPREAD") == 0)
+			else if (strcmp(varValue, KDTREE_SPLIT_MAX_SPREAD) == 0)
 			{
 				config->spKDTreeSplitMethod = SP_KDTREE_MAX_SPREAD;
 				spKDTreeSplitMethodInit = true;
 			}
-			else if (strcmp(varValue, "INCREMENTAL") == 0)
+			else if (strcmp(varValue, KDTREE_SPLIT_INCREMENTAL) == 0)
 			{
 				config->spKDTreeSplitMethod = SP_KDTREE_INCREMENTAL;
 				spKDTreeSplitMethodInit = true;
@@ -262,7 +329,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 				return NULL;
 			}
 		}
-		else if (strcmp(varName, "spKNN") == 0)
+		else if (strcmp(varName, KNN) == 0)
 		{
 			numberValue = atoi(varValue);
 			sprintf(numberChecker, "%d", numberValue);
@@ -278,14 +345,14 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			config->spKNN = numberValue;
 			spKNNInit = true;
 		}
-		else if (strcmp(varName, "spMinimalGUI") == 0)
+		else if (strcmp(varName, MINIMAL_GUI) == 0)
 		{
-			if (strcmp(varValue, "true") == 0)
+			if (strcmp(varValue, TRUE) == 0)
 			{
 				config->spMinimalGUI = true;
 				spMinimalGUIInit = true;
 			}
-			else if (strcmp(varValue, "false") == 0)
+			else if (strcmp(varValue, FALSE) == 0)
 			{
 				config->spMinimalGUI = false;
 				spMinimalGUIInit = true;
@@ -300,7 +367,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 				return NULL;
 			}
 		}
-		else if (strcmp(varName, "spLoggerLevel") == 0)
+		else if (strcmp(varName, LOGGER_LEVEL) == 0)
 		{
 			numberValue = atoi(varValue);
 			sprintf(numberChecker, "%d", numberValue);
@@ -316,7 +383,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			config->spLoggerLevel = numberValue;
 			spLoggerLevelInit = true;
 		}
-		else if (strcmp(varName, "spLoggerFilename") == 0)
+		else if (strcmp(varName, LOGGER_FILENAME) == 0)
 		{
 			sprintf(config->spLoggerFilename, "%s", varValue);
 			spLoggerFilenameInit = true;
@@ -332,7 +399,8 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		free(varName);
 		free(varValue);
-	}
+	} // Now done reading the file
+	
 	if (!feof(file))
 	{
 		PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
@@ -340,54 +408,60 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		*msg = SP_CONFIG_INVALID_STRING;
 		return NULL;
 	}
+	
+	// Check all non-default variables were initialized
 	if (!spImagesDirectoryInit)
 	{
-		PRINT_ERROR(filename, lineNum, ERR_MSG_PARAMETER("spImagesDirctory"));
+		PRINT_ERROR(filename, lineNum, ERR_MSG_PARAMETER(IMAGES_DIRECTORY));
 		free(config);
 		*msg = SP_CONFIG_MISSING_DIR;
 		return NULL;
 	}
 	if (!spImagesPrefixInit)
 	{
-		PRINT_ERROR(filename, lineNum, ERR_MSG_PARAMETER("spImagesPrefix"));
+		PRINT_ERROR(filename, lineNum, ERR_MSG_PARAMETER(IMAGES_PREFIX));
 		free(config);
 		*msg = SP_CONFIG_MISSING_PREFIX;
 		return NULL;
 	}
 	if (!spImagesSuffixInit)
 	{
-		PRINT_ERROR(filename, lineNum, ERR_MSG_PARAMETER("spImagesSuffix"));
+		PRINT_ERROR(filename, lineNum, ERR_MSG_PARAMETER(IMAGES_SUFFIX));
 		free(config);
 		*msg = SP_CONFIG_MISSING_SUFFIX;
 		return NULL;
 	}
 	if (!spNumOfImagesInit)
 	{
-		PRINT_ERROR(filename, lineNum, ERR_MSG_PARAMETER("spNumOfImages"));
+		PRINT_ERROR(filename, lineNum, ERR_MSG_PARAMETER(NUM_IMAGES));
 		free(config);
 		*msg = SP_CONFIG_MISSING_NUM_IMAGES;
 		return NULL;
 	}
+	
+	// If other variables were not initialized, set to default value
 	if (!spPCADimensionInit)
-		config->spPCADimension = 20;
+		config->spPCADimension = DEF_PCA_DIM;
 	if (!spPCAFilenameInit)
-		sprintf(config->spPCAFilename, "pca.yml");
+		sprintf(config->spPCAFilename, DEF_PCA_FILENAME);
 	if (!spNumOfFeaturesInit)
-		config->spNumOfFeatures = 100;
+		config->spNumOfFeatures = DEF_NUM_FEATURES;
 	if (!spExtractionModeInit)
-		config->spExtractionMode = true;
+		config->spExtractionMode = DEF_EXTRACTION_MODE;
 	if (!spNumOfSimilarImagesInit)
-		config->spNumOfSimilarImages = 1;
+		config->spNumOfSimilarImages = DEF_NUM_SIMILAR_IMAGES;
 	if (!spKDTreeSplitMethodInit)
-		config->spKDTreeSplitMethod = SP_KDTREE_MAX_SPREAD;
+		config->spKDTreeSplitMethod = DEF_KDTREE_SPLIT_METHOD;
 	if (!spKNNInit)
-		config->spKNN = 1;
+		config->spKNN = DEF_KNN;
 	if (!spMinimalGUIInit)
-		config->spMinimalGUI = false;
+		config->spMinimalGUI = DEF_MINIMAL_GUI;
 	if (!spLoggerLevelInit)
-		config->spLoggerLevel = 3;
+		config->spLoggerLevel = DEF_LOGGER_LEVEL;
 	if (!spLoggerFilenameInit)
-		sprintf(config->spLoggerFilename, "stdout");
+		sprintf(config->spLoggerFilename, DEF_LOGGER_FILENAME);
+	
+	// All done
 	*msg = SP_CONFIG_SUCCESS;
 	return config;
 }
@@ -404,7 +478,7 @@ bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG* msg)
 	return config->spExtractionMode;
 }
 
-bool spConfigMinialGui(const SPConfig config, SP_CONFIG_MSG* msg)
+bool spConfigMinimalGui(const SPConfig config, SP_CONFIG_MSG* msg)
 {
 	assert(msg != NULL);
 	if (config == NULL)
@@ -504,7 +578,7 @@ SP_CONFIG_MSG spConfigGetLoggerFilename(char* loggerFilename, const SPConfig con
 {
 	if (config == NULL || loggerFilename == NULL)
 		return SP_CONFIG_INVALID_ARGUMENT;
-	sprintf(loggerFilename, "%s%s", config->spImagesDirectory, config->spLoggerFilename);
+	sprintf(loggerFilename, "%s", config->spLoggerFilename);
 	return SP_CONFIG_SUCCESS;
 }
 
@@ -532,7 +606,7 @@ SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config)
 {
 	if (config == NULL || pcaPath == NULL)
 		return SP_CONFIG_INVALID_ARGUMENT;
-	sprintf(pcaPath, "%s%s", config->spImagesDirectory, config->spImagesPrefix);
+	sprintf(pcaPath, "%s", config->spPCAFilename);
 	return SP_CONFIG_SUCCESS;
 }
 
