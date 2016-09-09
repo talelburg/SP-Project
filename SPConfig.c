@@ -28,8 +28,8 @@
 		|| strcmp(STRING, ".bmp") == 0 || strcmp(STRING, ".gif") == 0)
 
 // Values
-#define TRUE "true"
-#define FALSE "false"
+#define TRUE_STRING "true"
+#define FALSE_STRING "false"
 
 #define KDTREE_SPLIT_RANDOM "RANDOM"
 #define KDTREE_SPLIT_MAX_SPREAD "MAX_SPREAD"
@@ -77,8 +77,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 	
 	// To be used during run
 	FILE* file = NULL; 
-	char line[MAX_LEN]; 
-	char numberChecker[MAX_LEN]; 
+	char line[MAX_LEN];
 	char *varName, *varValue;
 	int lineNum; 
 	int i;
@@ -182,10 +181,10 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		strncpy(varValue, line + varValueStart, varValueLen); // Copy variable value
 		varValue[varValueLen] = '\0'; // Add null terminator
 		
-		// Check which variable the line declares
+		// Check which variable the line declares and set its value
 		if (strcmp(varName, IMAGES_DIRECTORY) == 0)
 		{
-			sprintf(config->spImagesDirectory, "%s", varValue);
+			sprintf(config->spImagesDirectory, "%s", varValue); // just copy the value - same is done for all strings
 			spImagesDirectoryInit = true;
 		}
 		else if (strcmp(varName, IMAGES_PREFIX) == 0)
@@ -195,7 +194,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, IMAGES_SUFFIX) == 0)
 		{
-			if (!IS_VALID_SUFFIX(varValue))
+			if (!IS_VALID_SUFFIX(varValue)) // check suffix is one of the options
 			{
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
@@ -209,35 +208,37 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, NUM_IMAGES) == 0)
 		{
-			// atoi ignores certain non number characters, so we check the value is correct
-			numberValue = atoi(varValue);
-			sprintf(numberChecker, "%d", numberValue);
-			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 0)
+			for (i = 0; i < strlen(varName); i++) // check all chars of the value are digits - same is done for all integers
 			{
-				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
-				free(config);
-				free(varName);
-				free(varValue);
-				*msg = SP_CONFIG_INVALID_INTEGER;
-				return NULL;
+				if (!isdigit(varName[i]))
+				{
+					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
+					free(config);
+					free(varName);
+					free(varValue);
+					*msg = SP_CONFIG_INVALID_INTEGER;
+					return NULL;
+				}
 			}
+			numberValue = atoi(varValue);
 			config->spNumOfImages = numberValue;
 			spNumOfImagesInit = true;
 		}
 		else if (strcmp(varName, PCA_DIM) == 0)
 		{
-			// See comment at line 205
-			numberValue = atoi(varValue);
-			sprintf(numberChecker, "%d", numberValue);
-			if (strcmp(numberChecker, varValue) != 0 || numberValue < MIN_DIM || numberValue > MAX_DIM)
+			for (i = 0; i < strlen(varName); i++)
 			{
-				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
-				free(config);
-				free(varName);
-				free(varValue);
-				*msg = SP_CONFIG_INVALID_INTEGER;
-				return NULL;
+				if (!isdigit(varName[i]))
+				{
+					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
+					free(config);
+					free(varName);
+					free(varValue);
+					*msg = SP_CONFIG_INVALID_INTEGER;
+					return NULL;
+				}
 			}
+			numberValue = atoi(varValue);
 			config->spPCADimension = numberValue;
 			spPCADimensionInit = true;
 		}
@@ -248,32 +249,31 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, NUM_FEATURES) == 0)
 		{
-			// See comment at line 205
-			numberValue = atoi(varValue);
-			sprintf(numberChecker, "%d", numberValue);
-			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 0)
+			for (i = 0; i < strlen(varName); i++) 
 			{
-				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
-				free(config);
-				free(varName);
-				free(varValue);
-				*msg = SP_CONFIG_INVALID_INTEGER;
-				return NULL;
+				if (!isdigit(varName[i]))
+				{
+					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
+					free(config);
+					free(varName);
+					free(varValue);
+					*msg = SP_CONFIG_INVALID_INTEGER;
+					return NULL;
+				}
 			}
+			numberValue = atoi(varValue);
 			config->spNumOfFeatures = numberValue;
 			spNumOfFeaturesInit = true;
 		}
 		else if (strcmp(varName, EXTRACTION_MODE) == 0)
 		{
-			if (strcmp(varValue, "true") == 0)
+			if (strcmp(varValue, TRUE_STRING) == 0) // check value is boolean - same is done for all booleans
 			{
 				config->spExtractionMode = true;
-				spExtractionModeInit = true;
 			}
-			else if (strcmp(varValue, "false") == 0)
+			else if (strcmp(varValue, FALSE_STRING) == 0)
 			{
 				config->spExtractionMode = false;
-				spExtractionModeInit = true;
 			}
 			else
 			{
@@ -284,40 +284,39 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 				*msg = SP_CONFIG_INVALID_STRING;
 				return NULL;
 			}
+			spExtractionModeInit = true;
 		}
 		else if (strcmp(varName, NUM_SIMILAR_IMAGES) == 0)
 		{
-			// See comment at line 205
-			numberValue = atoi(varValue);
-			sprintf(numberChecker, "%d", numberValue);
-			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 0)
+			for (i = 0; i < strlen(varName); i++) 
 			{
-				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
-				free(config);
-				free(varName);
-				free(varValue);
-				*msg = SP_CONFIG_INVALID_INTEGER;
-				return NULL;
+				if (!isdigit(varName[i]))
+				{
+					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
+					free(config);
+					free(varName);
+					free(varValue);
+					*msg = SP_CONFIG_INVALID_INTEGER;
+					return NULL;
+				}
 			}
+			numberValue = atoi(varValue);
 			config->spNumOfSimilarImages = numberValue;
 			spNumOfSimilarImagesInit = true;
 		}
 		else if (strcmp(varName, KDTREE_SPLIT_METHOD) == 0)
 		{
-			if (strcmp(varValue, KDTREE_SPLIT_RANDOM) == 0)
+			if (strcmp(varValue, KDTREE_SPLIT_RANDOM) == 0) // check value is one of the options
 			{
 				config->spKDTreeSplitMethod = SP_KDTREE_RANDOM;
-				spKDTreeSplitMethodInit = true;
 			}
 			else if (strcmp(varValue, KDTREE_SPLIT_MAX_SPREAD) == 0)
 			{
 				config->spKDTreeSplitMethod = SP_KDTREE_MAX_SPREAD;
-				spKDTreeSplitMethodInit = true;
 			}
 			else if (strcmp(varValue, KDTREE_SPLIT_INCREMENTAL) == 0)
 			{
 				config->spKDTreeSplitMethod = SP_KDTREE_INCREMENTAL;
-				spKDTreeSplitMethodInit = true;
 			}
 			else
 			{
@@ -328,34 +327,35 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 				*msg = SP_CONFIG_INVALID_STRING;
 				return NULL;
 			}
+			spKDTreeSplitMethodInit = true;
 		}
 		else if (strcmp(varName, KNN) == 0)
 		{
-			numberValue = atoi(varValue);
-			sprintf(numberChecker, "%d", numberValue);
-			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 0)
+			for (i = 0; i < strlen(varName); i++) 
 			{
-				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
-				free(config);
-				free(varName);
-				free(varValue);
-				*msg = SP_CONFIG_INVALID_INTEGER;
-				return NULL;
+				if (!isdigit(varName[i]))
+				{
+					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
+					free(config);
+					free(varName);
+					free(varValue);
+					*msg = SP_CONFIG_INVALID_INTEGER;
+					return NULL;
+				}
 			}
+			numberValue = atoi(varValue);
 			config->spKNN = numberValue;
 			spKNNInit = true;
 		}
 		else if (strcmp(varName, MINIMAL_GUI) == 0)
 		{
-			if (strcmp(varValue, TRUE) == 0)
+			if (strcmp(varValue, TRUE_STRING) == 0)
 			{
 				config->spMinimalGUI = true;
-				spMinimalGUIInit = true;
 			}
-			else if (strcmp(varValue, FALSE) == 0)
+			else if (strcmp(varValue, FALSE_STRING) == 0)
 			{
 				config->spMinimalGUI = false;
-				spMinimalGUIInit = true;
 			}
 			else
 			{
@@ -366,20 +366,23 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 				*msg = SP_CONFIG_INVALID_STRING;
 				return NULL;
 			}
+			spMinimalGUIInit = true;
 		}
 		else if (strcmp(varName, LOGGER_LEVEL) == 0)
 		{
-			numberValue = atoi(varValue);
-			sprintf(numberChecker, "%d", numberValue);
-			if (strcmp(numberChecker, varValue) != 0 || numberValue <= 0 || numberValue >= 5)
+			for (i = 0; i < strlen(varName); i++) 
 			{
-				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
-				free(config);
-				free(varName);
-				free(varValue);
-				*msg = SP_CONFIG_INVALID_INTEGER;
-				return NULL;
+				if (!isdigit(varName[i]))
+				{
+					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
+					free(config);
+					free(varName);
+					free(varValue);
+					*msg = SP_CONFIG_INVALID_INTEGER;
+					return NULL;
+				}
 			}
+			numberValue = atoi(varValue);
 			config->spLoggerLevel = numberValue;
 			spLoggerLevelInit = true;
 		}
@@ -388,7 +391,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			sprintf(config->spLoggerFilename, "%s", varValue);
 			spLoggerFilenameInit = true;
 		}
-		else 
+		else // line declares an illegal variable
 		{
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 			free(config);
