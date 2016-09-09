@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 #include "SPKDTree.h"
 #include "SPKDTreeSplitMethod.h"
 
