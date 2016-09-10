@@ -210,9 +210,9 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			for (i = 0; i < (int)strlen(varName); i++) // check all chars of the value are digits - same is done for all integers
 			{
-				if (!isdigit(varName[i]))
+				if (!isdigit(varValue[i]))
 				{					
-					printf("value: {%s}", varValue);
+					printf("value: {%s}\n", varValue);
 					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 					free(config);
 					free(varName);
@@ -229,7 +229,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			for (i = 0; i < (int)strlen(varName); i++)
 			{
-				if (!isdigit(varName[i]))
+				if (!isdigit(varValue[i]))
 				{
 					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 					free(config);
@@ -252,7 +252,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			for (i = 0; i < (int)strlen(varName); i++) 
 			{
-				if (!isdigit(varName[i]))
+				if (!isdigit(varValue[i]))
 				{
 					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 					free(config);
@@ -291,7 +291,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			for (i = 0; i < (int)strlen(varName); i++) 
 			{
-				if (!isdigit(varName[i]))
+				if (!isdigit(varValue[i]))
 				{
 					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 					free(config);
@@ -334,7 +334,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			for (i = 0; i < (int)strlen(varName); i++) 
 			{
-				if (!isdigit(varName[i]))
+				if (!isdigit(varValue[i]))
 				{
 					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 					free(config);
@@ -373,7 +373,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			for (i = 0; i < (int)strlen(varName); i++) 
 			{
-				if (!isdigit(varName[i]))
+				if (!isdigit(varValue[i]))
 				{
 					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 					free(config);
