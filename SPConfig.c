@@ -157,12 +157,12 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		while (line[i] == ' ' || line[i] == '\t' || line[i] == '\r') // Ignore whitespace before variable value
 			i++;
 		varValueStart = i;
-		while (line[i] != ' ' && line[i] != '\t' && line[i] != '\r' && line[i] != '\n') // Read variable value
+		while (line[i] != ' ' && line[i] != '\t' && line[i] != '\r' && line[i] != '\n' && line[i] != '\0') // Read variable value
 			i++;
 		varValueLen = i - varValueStart;
 		while (line[i] == ' ' || line[i] == '\t' || line[i] == '\r') // Ignore whitespace after variable value
 			i++;
-		if (line[i] != '\n') // Next non-whitespace character must be new line
+		if (line[i] != '\n' && line[i] != '\0') // Next non-whitespace character must be new line
 		{
 			printf("3the line: {%s}\n", line);
 			printf("the chars: {%c%c%c%c}\n", line[i-3], line[i-2], line[i-1], line[i]);
