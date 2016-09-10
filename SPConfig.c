@@ -166,6 +166,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			printf("3the line: {%s}\n", line);
 			printf("the char: {%c}\n", line[i]);
+			printf("cur index: {%d}, length: {%d}", i, (int)(strlen(line)));
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 			free(config);
 			*msg = SP_CONFIG_INVALID_STRING;
