@@ -39,7 +39,7 @@ using namespace sp;
 #define MSG_BEST_CANDIDATES "Best candidates for - %s - are:\n"
 #define MSG_EXIT "Exiting..."
 
-#define EXIT_INPUT "exit"
+#define EXIT_INPUT "<>"
 #define STRING_LEN (1024)
 
 int main(int argc, char** argv)
