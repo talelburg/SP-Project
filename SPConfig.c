@@ -133,7 +133,8 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			if (line[i] == '\n') // If line ends amidst variable name
 			{
-				printf("1the line: {%s}\n", line);
+				printf("1the line: {%s}\n{%d}\n", line, i);
+				printf("The first: {%d}\n", (int)line[0]);
 				PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 				free(config);
 				*msg = SP_CONFIG_INVALID_STRING;
@@ -199,7 +200,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			if (!IS_VALID_SUFFIX(varValue)) // check suffix is one of the options
 			{
-				printf("suf value: %s\n", varValue);
+				printf("suf value: {%s}\n", varValue);
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
 				free(varName);
