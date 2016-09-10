@@ -165,7 +165,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		if (line[i] != '\n') // Next non-whitespace character must be new line
 		{
 			printf("3the line: {%s}\n", line);
-			printf("the char: {%c}\n", line[i]);
+			printf("the chars: {%c%c%c%c}\n", line[i-3], line[i-2], line[i-1], line[i]);
 			printf("cur index: {%d}, length: {%d}", i, (int)(strlen(line)));
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 			free(config);
