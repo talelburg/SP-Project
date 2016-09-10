@@ -126,12 +126,12 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		lineNum++;
 		while (line[i] == ' ' || line[i] == '\t') // Ignore whitespace before variable name
 			i++;
-		if (line[i] == '#' || line[i] == '\n') // Either comment or empty line
+		if (line[i] == '#' || line[i] == '\n' || (line[i] == '\r' && line[i+1] == '\n')) // Either comment or empty line
 			continue;
 		varNameStart = i;
 		while (line[i] != ' ' && line[i] != '\t' && line[i] != '=') // Read variable name
 		{
-			if (line[i] == '\n') // If line ends amidst variable name
+			if (line[i] == '\n' || (line[i] == '\r' && line[i+1] == '\n')) // If line ends amidst variable name
 			{
 				printf("1the line: {%s}\n{%d}\n", line, i);
 				printf("The first: {%d}\n", (int)line[0]);
@@ -157,12 +157,12 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		while (line[i] == ' ' || line[i] == '\t') // Ignore whitespace before variable value
 			i++;
 		varValueStart = i;
-		while (line[i] != ' ' && line[i] != '\t' && line[i] != '\n') // Read variable value
+		while (line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && (line[i] != '\r' || line[i+1] != '\n')) // Read variable value
 			i++;
 		varValueLen = i - varValueStart;
 		while (line[i] == ' ' || line[i] == '\t') // Ignore whitespace after variable value
 			i++;
-		if (line[i] != '\n') // Next non-whitespace character must be new line
+		if (line[i] != '\n'  && (line[i] != '\r' || line[i+1] != '\n')) // Next non-whitespace character must be new line
 		{
 			printf("3the line: {%s}\n", line);
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
