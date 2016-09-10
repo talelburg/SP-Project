@@ -208,7 +208,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, NUM_IMAGES) == 0)
 		{
-			for (i = 0; i < strlen(varName); i++) // check all chars of the value are digits - same is done for all integers
+			for (i = 0; i < (int)strlen(varName); i++) // check all chars of the value are digits - same is done for all integers
 			{
 				if (!isdigit(varName[i]))
 				{
@@ -226,7 +226,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, PCA_DIM) == 0)
 		{
-			for (i = 0; i < strlen(varName); i++)
+			for (i = 0; i < (int)strlen(varName); i++)
 			{
 				if (!isdigit(varName[i]))
 				{
@@ -249,7 +249,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, NUM_FEATURES) == 0)
 		{
-			for (i = 0; i < strlen(varName); i++) 
+			for (i = 0; i < (int)strlen(varName); i++) 
 			{
 				if (!isdigit(varName[i]))
 				{
@@ -288,7 +288,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, NUM_SIMILAR_IMAGES) == 0)
 		{
-			for (i = 0; i < strlen(varName); i++) 
+			for (i = 0; i < (int)strlen(varName); i++) 
 			{
 				if (!isdigit(varName[i]))
 				{
@@ -331,7 +331,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, KNN) == 0)
 		{
-			for (i = 0; i < strlen(varName); i++) 
+			for (i = 0; i < (int)strlen(varName); i++) 
 			{
 				if (!isdigit(varName[i]))
 				{
@@ -370,7 +370,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		}
 		else if (strcmp(varName, LOGGER_LEVEL) == 0)
 		{
-			for (i = 0; i < strlen(varName); i++) 
+			for (i = 0; i < (int)strlen(varName); i++) 
 			{
 				if (!isdigit(varName[i]))
 				{
