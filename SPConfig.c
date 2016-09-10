@@ -133,6 +133,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			if (line[i] == '\n') // If line ends amidst variable name
 			{
+				printf("1the line: {%s}\n", line);
 				PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 				free(config);
 				*msg = SP_CONFIG_INVALID_STRING;
@@ -144,7 +145,8 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		while (line[i] == ' ' || line[i] == '\t') // Ignore whitespace after variable name
 			i++;
 		if (line[i] != '=') // Next non-whitespace character must be equals
-		{
+		{			
+			printf("2the line: {%s}\n", line);
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 			free(config);
 			*msg = SP_CONFIG_INVALID_STRING;
@@ -161,6 +163,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			i++;
 		if (line[i] != '\n') // Next non-whitespace character must be new line
 		{
+			printf("3the line: {%s}\n", line);
 			PRINT_ERROR(filename, lineNum, ERR_MSG_INVALID_LINE);
 			free(config);
 			*msg = SP_CONFIG_INVALID_STRING;
@@ -196,6 +199,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 		{
 			if (!IS_VALID_SUFFIX(varValue)) // check suffix is one of the options
 			{
+				printf("suf value: %s\n", varValue);
 				PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 				free(config);
 				free(varName);
@@ -211,8 +215,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg)
 			for (i = 0; i < (int)strlen(varValue); i++) // check all chars of the value are digits - same is done for all integers
 			{
 				if (!isdigit(varValue[i]))
-				{					
-					printf("value: {%s}\n", varValue);
+				{
 					PRINT_ERROR(filename, lineNum, ERR_MSG_VALUE_CONSTRAINT);
 					free(config);
 					free(varName);
